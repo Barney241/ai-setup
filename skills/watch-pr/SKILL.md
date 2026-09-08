@@ -111,6 +111,15 @@ did not happen. Do not record it as reviewed; back off to `next_review_at`.
 After **three honoured attempts** with no review landing, stop and report the PR as **unreviewed**
 rather than green.
 
+**A review that finds nothing may post no review object at all.** Some bots skip the review object
+entirely when an incremental pass has no comments to make, so `reviewed_head` stays false even
+though the head *was* reviewed — and the gate above then blocks forever on a PR that is genuinely
+done. The evidence is the bot's own summary comment: it names the commit range it covered and says
+it found nothing actionable. When that range covers the head and every thread is addressed, post the
+bot's resolve command as a **top-level PR comment**; that resolves its threads and submits the review
+object the gate is waiting for. CodeRabbit refuses the same command inside a review-thread reply
+("Approve commands are disabled for review-thread replies"), so it has to be top-level.
+
 **Local alternative while you wait.** A review CLI usually draws on a separate quota pool from the
 PR bot. Run it on the current diff and fix what it finds; the bot's eventual review then becomes a
 second opinion instead of the blocker.
@@ -118,6 +127,14 @@ second opinion instead of the blocker.
 ## Phase 3 · CI failure triage
 
 The goal is green CI, not explained-away CI.
+
+**First rule out a superseded run.** Marking a draft ready — or any push — cancels the run in
+flight, and the cancelled run's failed checks stay in the head's rollup, so the verdict is `CI_RED`
+after the replacement run already went green. If the failing check's `url` points at a run whose
+jobs are mostly `cancelled`, list the runs for that head
+(`gh api "repos/<owner>/<repo>/actions/runs?head_sha=<head>"`) and look for a newer successful run of
+the same workflow. If one exists there is nothing to fix: only a new push clears the stale rollup, so
+fold it into the next fix round instead of chasing a phantom failure.
 
 Classify the failure first:
 
