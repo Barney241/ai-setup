@@ -116,6 +116,38 @@ your project's setting before relying on this.
 
 ---
 
+## T-8 · A wait must be able to fail
+
+A barrier that is **already satisfied when it is reached** proves nothing, and every assertion after
+it runs against whatever state happened to exist. This is T-3 for asynchronous code, and it is the
+most common way a suite passes against broken behaviour.
+
+**ASSERT** Every wait polls an observable that only the awaited action can move.
+
+**VERIFY** Ask one question of the wait: **would this return on its first poll, before the awaited
+thing happened?** If yes it is not a barrier. `severity: major`, `category: test`.
+
+Shapes that answer yes, all of them shipped:
+
+- Waiting on an aggregate the change leaves unmoved — one item added and one removed, count still 3.
+- Waiting on generic health, or on a `ready` state that was already true for the whole test.
+- Asserting on an asynchronous projection with no wait at all.
+- A fixed sleep standing in for a barrier. That is a race with better odds, not a wait.
+
+Wait instead on something only the action moves: a counter incremented on exactly that branch, or
+the identity of the new row. A real barrier satisfies in a second or two; one that routinely sits
+near its timeout is a sleep in disguise, so a new barrier is worth timing once to prove it fires.
+Check too whether the poll helper evaluates before its first tick — Go's `require.Eventually` sleeps
+first, silently adding its interval to every call.
+
+**Raising a timeout is not a fix.** An expired wait means something never arrived; a longer wait
+only buys a slower red.
+
+**DO NOT FLAG** a wait whose predicate is genuinely specific but happens to satisfy quickly — speed
+is not the defect, unfalsifiability is. And do not flag a synchronous test for having no wait.
+
+---
+
 ## Output contract for this lane
 
 A test finding must name:
