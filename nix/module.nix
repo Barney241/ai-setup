@@ -20,7 +20,7 @@ let
     PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH = "${playwrightChromium}";
   };
 
-  toolchain = with pkgs; [ gh git jq python3 nodejs ripgrep ];
+  toolchain = with pkgs; [ gh git jq python3 ripgrep ];
 
   playwrightTools = with pkgs; [ playwright-test playwright-mcp ];
 
@@ -55,7 +55,7 @@ in
     fleet = lib.mkOption {
       type = lib.types.listOf lib.types.str;
       default = [ ];
-      example = [ "atlas" "orion" "serveros" ];
+      example = [ "desktop" "laptop" "server" ];
       description = "SSH hosts that `loadout push` and `loadout fleet` sync immediately.";
     };
 

@@ -155,17 +155,31 @@ fast_forward() {
   fi
 }
 
+installed_plugin_commit() {
+  jq -r '.plugins["loadout@loadout"][0].gitCommitSha // empty' "$HOME/.claude/plugins/installed_plugins.json" 2>/dev/null || true
+}
+
+plugin_is_current() {
+  local installed
+  installed="$(installed_plugin_commit)"
+  [ -n "$installed" ] || return 1
+  git_in cat-file -e "$installed^{commit}" 2>/dev/null || return 1
+  git_in diff --quiet "$installed" HEAD -- plugin .claude-plugin
+}
+
 refresh_claude_plugin() {
   has claude || return 0
-  if ! claude plugin marketplace list 2>/dev/null | grep -q 'loadout'; then
-    claude plugin marketplace add "$LOADOUT_DIR" >/dev/null && say "added loadout plugin marketplace"
+  plugin_is_current && return 0
+  if claude plugin marketplace list 2>/dev/null | grep -q 'loadout'; then
+    claude plugin marketplace update loadout >/dev/null 2>&1 || true
   else
-    claude plugin marketplace update loadout >/dev/null 2>&1 || warn "plugin marketplace update failed"
+    claude plugin marketplace add "$LOADOUT_DIR" >/dev/null || { warn "could not add the loadout plugin marketplace"; return 0; }
   fi
-  if ! claude plugin list 2>/dev/null | grep -q 'loadout@loadout'; then
-    claude plugin install loadout@loadout >/dev/null && say "installed loadout plugin"
+  claude plugin uninstall loadout@loadout >/dev/null 2>&1 || true
+  if claude plugin install loadout@loadout >/dev/null; then
+    say "installed loadout plugin at $(git_in rev-parse --short HEAD)"
   else
-    claude plugin update loadout@loadout >/dev/null 2>&1 || warn "plugin update failed"
+    warn "loadout plugin install failed"
   fi
 }
 

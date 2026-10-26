@@ -88,12 +88,12 @@ home-manager.users.me = {
   imports = [ inputs.loadout.homeManagerModules.default ];
   programs.loadout = {
     enable = true;
-    fleet = [ "atlas" "orion" "serveros" ];
+    fleet = [ "desktop" "laptop" "server" ];
   };
 };
 ```
 
-It installs `loadout`, `gh`, `git`, `jq`, `python3`, `node`, `ripgrep`, the
+It installs `loadout`, `gh`, `git`, `jq`, `python3`, `ripgrep`, the
 Playwright CLI and MCP, sets `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH`, and runs
 the sync timer. Turn on lingering for headless hosts so the timer runs
 without a login.
