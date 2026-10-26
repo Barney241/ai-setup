@@ -1,0 +1,14 @@
+{
+  "name": "loadout",
+  "owner": {
+    "name": "Barney241"
+  },
+  "description": "Barney241 loadout: fleet-wide hooks and MCP servers for Claude Code.",
+  "plugins": [
+    {
+      "name": "loadout",
+      "source": "./plugin",
+      "description": "Fleet-wide hooks and MCP servers: secret-file guard, per-project direnv loading, headless Playwright MCP."
+    }
+  ]
+}

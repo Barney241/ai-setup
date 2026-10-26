@@ -1,182 +1,118 @@
-# ai-code-skils
+# loadout
 
-Portable skills for AI coding agents — written once, usable from Claude Code, Cursor, Codex,
-Copilot, Aider, Windsurf, or a plain chat window.
+The agent skills, hooks and tools I carry to every host and every project.
+Claude Code is the main driver; Codex (GPT Sol) and Antigravity (Gemini)
+review through [T3 Code](https://github.com/pingdotgg/t3code)'s
+`delegate_task`. Built on [tstack](https://github.com/t3dotgg/tstack) (see
+[NOTICE](NOTICE.md)).
 
-A *skill* here is a directory of markdown that tells an agent how to do one job properly. No
-runtime, no dependencies, no API keys. The agent reads it and follows it.
-
----
-
-## Principles
-
-These are the rules the skills in this repo are built on. They are here because each one was
-learned by watching an agent get it wrong.
-
-**1. Precision over recall.** A false finding costs the reader's trust, and trust is what makes
-the *next* finding get read. An empty result is a valid, good outcome; padding is not. Recall is
-deliberately traded away — a reviewer that reports nine real problems and one invention is worse
-than one that reports six real problems and nothing else.
-
-**2. Evidence before claims.** Never infer behaviour from a name, an import, or a plausible
-story. Run the command; cite what it returned. A claim about anything with state — a call site,
-a config value, a row, a CI result — is re-established at the moment it is made, not recalled.
-
-**3. Deterministic work does not need a model.** Selecting files, matching an anchor, counting
-coverage, computing a hash — if a shell command decides it, a command decides it. Model
-attention is the scarce resource; spend it on judgment.
-
-**4. Error costs are asymmetric, so filters must be too.** Discarding a true finding is silent
-and permanent — nobody learns it existed. Keeping a false one costs a few seconds of reading.
-Any stage that removes findings must be built around that asymmetry, and must be allowed to
-delete only on grounds it can *prove*, never on "I couldn't verify this" or "seems low value".
-
-**5. Verify the verifier.** A filter that approves everything and a filter that works produce
-identical output when the input is clean. Calibrate with deliberately-planted bad inputs, or you
-do not know which one you have.
-
-**6. Anchor to content, not coordinates.** Line numbers are hallucinated confidently and
-constantly. Quoted source text is not. Every finding carries the verbatim lines it refers to, and
-the line number is *derived* from matching that text — never asserted.
-
-**7. One contract, or you cannot count anything.** When four tools each invent their own severity
-vocabulary, nothing can be aggregated, so nothing improves. Fix the schema first; measurement is
-what turns opinion into evidence.
-
-**8. Portable core, local traps.** Universal rules ship in the skill. The things that are only
-true of *your* repository — the linter set, the ORM idiom, the one function everybody misuses —
-live in a project file you own and the skill loads. Mixing them makes the skill unshippable.
-
-**9. Fan out over the work, not over personas.** Seven "reviewers" backed by one prompt with
-seven adjectives produce *correlated* errors, and agreement between them then reads as
-confirmation. Split on what the change actually touches instead, and give each lane a boundary it
-must not cross.
-
-**10. Surface or escalate — never dismiss.** "Out of scope", "pre-existing pattern", "tracked
-separately" with no ticket, "cascades through N call sites" — these are rationalizations, not
-judgments. A reviewer surfaces; a human decides whether the surface is worth fixing.
-
-**11. Subscription-safe by construction.** Everything runs in the session you are already paying
-for. No skill here requires a metered API key, a CI runner, or a webhook. If a workflow only
-works by billing per push, it does not belong in this repo.
-
----
+Everything here is generic. Anything true of only one repo lives in that
+repo's `.agents/loadout.md` ([template](templates/loadout.md)) or in a
+project skill.
 
 ## Skills
 
-| Skill | What it does |
+Descriptions are triggers, not summaries. Say the words, chain them in one
+sentence: "take over #123, sol loop, full stop".
+
+| Skill | Say | What it does |
+|---|---|---|
+| `full-send` | "full send" | Takes a change to a merged PR with nobody watching: proves it, reviews it, files it, babysits it, merges it. |
+| `full-stop` | "full stop" | Same as `full-send`, but stops when the PR is ready for you to merge. |
+| `sol-loop` | "sol loop" / "soul loop" | GPT Sol reviews the change in a loop until both agree. 3 rounds, 5 for security or data loss. |
+| `council` | "council" | Claude Opus, GPT Sol and Gemini Pro review; loops until they agree; scores go in the PR. |
+| `prove` | "prove it", "verify" | Evidence the change works: reproduce, fail-on-base, the running app, screenshots. |
+| `precision-review` | "precision review" | The review contract every reviewer works to: evidence, severity and effort, scope. |
+| `file-pr` | "file a PR" | Short PR that leads with the problem. Repo preflight from `.agents/loadout.md`. |
+| `babysit-pr` | "babysit" | Watches a PR through CI and review bots and fixes the real findings. |
+| `takeover` | "take over" | Finishes someone else's PR, branch or agent thread and keeps their credit. |
+| `modernize` | "modernize" | Rebases an old PR and decides whether it should still exist. |
+| `cut-release` | "cut a release" | Version, gates that mirror prod, tag, notes, deploy, health checks. |
+| `retro` | "retro" | Why did the agent do that? A better next prompt, and a patch to the skill. |
+| `harness-guards` | (automatic) | What to do when the sandbox, a worktree guard or dcg rejects a command. |
+| `agent-report` | (automatic) | Coverage block for investigation subagents. |
+| `leaving-pr-comments` | (automatic) | Format for comments an agent posts on my behalf. |
+
+Subagent: `ci-digest` (Haiku) reads one failed CI log and returns only the
+failures.
+
+Plugin `loadout` (Claude Code): a secret-file guard, per-project direnv
+loading in worktrees, and a headless Playwright MCP server with a Nix
+Chromium.
+
+[`global/AGENTS.md`](global/AGENTS.md) holds the rules every agent on every
+host follows, including the model roster. Claude imports it from
+`~/.claude/CLAUDE.md`; Codex and Antigravity get it as `~/.codex/AGENTS.md`
+and `~/.gemini/GEMINI.md`.
+
+## How it reaches every host
+
+```
+edit skill ──► loadout push ──► GitHub ──► every host: loadout-sync.service
+                    │                       (timer every 15 min, and at login)
+                    └──ssh──► other hosts: systemctl --user start loadout-sync
+```
+
+Each host keeps a live checkout (`loadout path`). `loadout sync` clones it
+if missing, fast-forwards it (never over local edits or a diverged branch),
+and links each skill into `~/.claude/skills` and `~/.agents/skills`. Links it
+did not create are never touched, so claude.ai synced skills and other tools'
+skills live alongside. A new skill reaches every host without a rebuild.
+
+| Command | Does |
 |---|---|
-| [`review`](skills/review) | Precision-first code review: `select → group → plan → review → anchor → verify → record`, with path-scoped rule docs and a fact-checking pass that can only delete what the diff disproves. |
-| [`open-pr`](skills/open-pr) | Owns the step from committed to watched: preflight, issue linking, a local review pass *before* the push, then a draft PR handed straight to `watch-pr`. |
-| [`watch-pr`](skills/watch-pr) | Babysits a PR until it is genuinely green: CI triage with a three-attempt cap on unrelated failures, feedback resolution with banned rationalizations, one push per fix round. Ships [`prwatch`](skills/watch-pr/tools/prwatch), a Go tool that computes PR state and one verdict, and rations review-bot quota through a ledger. |
+| `loadout setup` | once per host: sync, then sign in to gh (plus git credentials), Claude, Codex and Antigravity if needed, check fleet SSH and T3's Antigravity provider, run `doctor` |
+| `loadout sync` | clone, fast-forward, relink, refresh the plugin and the Codex MCP entry |
+| `loadout push [msg]` | commit, rebase, push, sync every other host now |
+| `loadout status` / `doctor` | checkout state and last sync / tools, auth, links |
 
-The three chain: `review` → `open-pr` → `watch-pr`, with no user-gated pause between them. Each is
-usable on its own.
+### Options I considered for fleet sync
 
-More to come. The layout below is built so adding one is mechanical.
-
----
+| Option | Verdict |
+|---|---|
+| Live git checkout + user timer | **Used.** Editable in place, history, no rebuild per edit, offline hosts catch up. |
+| SSH fan-out on push (over Tailscale) | **Used** on top, so a push lands everywhere in seconds. Unreachable hosts fall back to the timer. |
+| Skills as a Nix flake input | Used only for the module and dependencies. For skill text it means a flake update plus a rebuild on every host for each edit, and read-only skills you can't patch mid-session. |
+| Claude plugin marketplace auto-update | Used only for hooks and MCP. Plugin skills are Claude-only and namespaced; Codex and Antigravity would not see them. |
+| Syncthing | No: no history or review, conflict files instead of merges. |
+| GitHub webhook to a scheduler | No: needs a public endpoint. SSH fan-out does the same over the tailnet. |
 
 ## Install
 
+NixOS / home-manager (what I use):
+
+```nix
+inputs.loadout.url = "github:Barney241/loadout";
+
+home-manager.users.me = {
+  imports = [ inputs.loadout.homeManagerModules.default ];
+  programs.loadout = {
+    enable = true;
+    fleet = [ "atlas" "orion" "serveros" ];
+  };
+};
+```
+
+It installs `loadout`, `gh`, `git`, `jq`, `python3`, `node`, `ripgrep`, the
+Playwright CLI and MCP, sets `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH`, and runs
+the sync timer. Turn on lingering for headless hosts so the timer runs
+without a login.
+
+Anywhere else:
+
 ```bash
-./install.sh review /path/to/your/repo
+git clone https://github.com/Barney241/loadout ~/Projects/personal/loadout
+~/Projects/personal/loadout/bin/loadout sync
 ```
 
-That copies the skill to `<repo>/.agents/skills/review/` and creates the
-`<repo>/.claude/skills/review` symlink so Claude Code registers it. Both locations are the
-convention: `.agents/` is the tool-neutral source of truth, `.claude/skills/` is the symlink that
-makes Claude Code see it.
+## Requirements
 
-Other flags:
-
-```bash
-./install.sh --list                      # show available skills
-./install.sh --all /path/to/repo         # install everything
-./install.sh --link review /path/to/repo # symlink instead of copy, to track upstream
-./install.sh --uninstall review /path/to/repo
-```
-
-`--link` points `.agents/skills/<name>` at this checkout, so `git pull` here updates every repo
-you installed into. Use it for your own machine; use the default copy when the skill needs
-repo-specific edits.
-
-For anything that is not Claude Code, see [`adapters/`](adapters) — the same markdown works, only
-the file it has to live in changes.
-
----
-
-## Layout
-
-```
-skills/<name>/
-  SKILL.md              required — frontmatter + the instructions the agent follows
-  README.md             optional — rationale, evidence, design notes for humans
-  rules/                optional — path-scoped rule documents the skill loads
-  assets/               optional — prompts, schemas, checklists
-  tools/                optional — real programs the skill calls
-install.sh              installs a skill into a target repo
-adapters/               how to load a skill in each AI system
-```
-
-`tools/` follows from principle 3: deterministic work should not cost model attention. Polling an
-API and computing a verdict is a program's job, so `watch-pr` ships one rather than describing a
-loop for the agent to run by hand.
-
-**Dependencies:** the skills themselves are plain markdown and need nothing. `prwatch` is the only
-program in the repo — Go 1.23+ and an authenticated `gh`, both optional, with a documented `gh`-only
-fallback if you would rather not build it.
-
-A skill is valid if `SKILL.md` exists and opens with YAML frontmatter carrying `name` and
-`description`. Everything else is convention. See [`skills/README.md`](skills/README.md) for the
-full contract and how to add one.
-
----
-
-## Why this exists
-
-Most agent instructions are written as prose in one enormous file, are never measured, and drift
-until nobody trusts them. The skills here are built to the opposite standard: each rule states
-what must be true, the command that establishes it, and the case where flagging it would be
-wrong. That structure is what makes a finding checkable instead of merely confident.
-
----
-
-## Sources
-
-These ideas are not original to this repo, and the borrowing is deliberate. Each skill's README
-credits its own influences in detail; the ones that shaped the principles above:
-
-- **[`alibaba/open-code-review`](https://github.com/alibaba/open-code-review)** — a hybrid of a
-  deterministic pipeline and an LLM agent, staged and explicitly precision-first, at a fraction of
-  a general agent's tokens. Principles 1, 3 and 6 come from studying it.
-- **[CodeRabbit](https://coderabbit.ai)** — the category · severity · **effort** taxonomy, and
-  publishing the verification transcript next to the finding. Principle 7.
-- **[PostHog's ReviewHog](https://posthog.com)** — parallel lanes, then a blind-spot pass
-  conditioned on their output, then a validation judge; and the framing that an empty sweep is a
-  good result. Principles 1 and 9.
-- **Agentic code-review benchmarks** — the reported "contextual backwardness" effect, where naively
-  retrieved repository context *degrades* review quality for most languages. Principle 8, and the
-  reason grouping here is deterministic and context is scoped per group.
-- **Code graph models for repository understanding** (e.g. *Code Graph Model*,
-  [arXiv:2505.16901](https://arxiv.org/abs/2505.16901)) — evaluated and deliberately not adopted; a
-  language server already answers the call-and-implements questions a graph would, with no index to
-  keep fresh.
-
-Anything not credited — the persona-correlation analysis, the anchoring rules, the calibration
-procedure, the portable/project split — came from running these skills against a production
-monorepo and watching what broke.
-
-## Contributions
-
-This is a personal repository, public so it can be read and forked — but **not open to pull
-requests**, and issues are not tracked. Fork it and make it yours; that is the intended use.
-
-If you do fork it, the one rule worth keeping is the bar in
-[`skills/README.md`](skills/README.md): every rule needs `ASSERT`, `VERIFY` and `DO NOT FLAG`, and
-every `VERIFY` command must be run once against a real repository to prove it matches something. A
-rule whose command silently matches nothing reports clean forever, which is worse than no rule.
+- An authenticated `gh`.
+- T3 Code with the Codex and Antigravity providers signed in, for `sol-loop`
+  and `council`. Without T3, a harness that can run those models.
+- `python3` for `pr-wait` and the secret guard.
 
 ## License
 
-MIT — see [LICENSE](LICENSE). Use it, fork it, ship it in your own tooling.
+[MIT](LICENSE). tstack-derived skills: [MIT](LICENSES-tstack), see
+[NOTICE](NOTICE.md).

@@ -1,0 +1,357 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+LOADOUT_DIR="${LOADOUT_DIR:-$HOME/Projects/personal/loadout}"
+LOADOUT_REPO="${LOADOUT_REPO:-https://github.com/Barney241/loadout.git}"
+LOADOUT_BRANCH="${LOADOUT_BRANCH:-main}"
+LOADOUT_FLEET="${LOADOUT_FLEET:-}"
+STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/loadout"
+SKILL_TARGETS=("$HOME/.claude/skills" "$HOME/.agents/skills")
+AGENT_TARGET="$HOME/.claude/agents"
+GLOBAL_RULES="$LOADOUT_DIR/global/AGENTS.md"
+
+say() { printf 'loadout: %s\n' "$*"; }
+warn() { printf 'loadout: warning: %s\n' "$*" >&2; }
+die() { printf 'loadout: error: %s\n' "$*" >&2; exit 1; }
+has() { command -v "$1" >/dev/null 2>&1; }
+git_in() { git -C "$LOADOUT_DIR" "$@"; }
+
+usage() {
+  cat <<EOF
+usage: loadout <command>
+
+  setup           one-time per host: sync, sign in to gh, Claude, Codex, Antigravity, check fleet SSH
+  sync            clone if missing, fast-forward from origin, relink, refresh plugin and MCP
+  link            relink skills, agents and global rules from the checkout (no network)
+  push [message]  commit local edits, rebase on origin, push, then sync the fleet
+  fleet           trigger a sync on every other host in LOADOUT_FLEET
+  status          checkout state, last sync, linked skills
+  doctor          check tools, auth and links on this host
+  path            print the checkout path
+
+checkout: $LOADOUT_DIR
+fleet:    ${LOADOUT_FLEET:-<none>}
+EOF
+}
+
+points_into_checkout() {
+  [ -L "$1" ] && case "$(readlink "$1")" in "$LOADOUT_DIR"/*) return 0 ;; esac
+  return 1
+}
+
+place_link() {
+  local source="$1" target="$2"
+  if points_into_checkout "$target" && [ "$(readlink "$target")" = "$source" ]; then
+    return 0
+  fi
+  if [ -e "$target" ] || [ -L "$target" ]; then
+    if points_into_checkout "$target"; then
+      ln -sfn "$source" "$target"
+      return 0
+    fi
+    warn "skipping $target: exists and is not managed by loadout"
+    return 0
+  fi
+  mkdir -p "$(dirname "$target")"
+  ln -s "$source" "$target"
+}
+
+prune_dangling() {
+  local dir="$1" entry
+  [ -d "$dir" ] || return 0
+  for entry in "$dir"/* "$dir"/.[!.]*; do
+    if points_into_checkout "$entry" && [ ! -e "$entry" ]; then
+      unlink "$entry"
+      say "removed stale link $entry"
+    fi
+  done
+}
+
+link_skills() {
+  local skill target_dir
+  for target_dir in "${SKILL_TARGETS[@]}"; do
+    mkdir -p "$target_dir"
+    for skill in "$LOADOUT_DIR"/skills/*/; do
+      [ -f "$skill/SKILL.md" ] || continue
+      skill="${skill%/}"
+      place_link "$skill" "$target_dir/$(basename "$skill")"
+    done
+    prune_dangling "$target_dir"
+  done
+}
+
+link_agents() {
+  local agent
+  mkdir -p "$AGENT_TARGET"
+  for agent in "$LOADOUT_DIR"/agents/*.md; do
+    [ -f "$agent" ] || continue
+    place_link "$agent" "$AGENT_TARGET/$(basename "$agent")"
+  done
+  prune_dangling "$AGENT_TARGET"
+}
+
+link_rules_file() {
+  local target="$1"
+  if [ -f "$target" ] && [ ! -L "$target" ] && [ ! -s "$target" ]; then
+    unlink "$target"
+  fi
+  place_link "$GLOBAL_RULES" "$target"
+}
+
+import_rules_into_claude() {
+  local claude_md="$HOME/.claude/CLAUDE.md" line="@$GLOBAL_RULES"
+  mkdir -p "$HOME/.claude"
+  if [ -f "$claude_md" ] && grep -qxF "$line" "$claude_md"; then
+    return 0
+  fi
+  if [ -s "$claude_md" ]; then
+    printf '%s\n\n%s' "$line" "$(cat "$claude_md")" > "$claude_md.loadout-tmp"
+    printf '\n' >> "$claude_md.loadout-tmp"
+    mv "$claude_md.loadout-tmp" "$claude_md"
+  else
+    printf '%s\n' "$line" > "$claude_md"
+  fi
+  say "imported global rules into $claude_md"
+}
+
+link_global_rules() {
+  [ -f "$GLOBAL_RULES" ] || return 0
+  import_rules_into_claude
+  link_rules_file "$HOME/.codex/AGENTS.md"
+  link_rules_file "$HOME/.gemini/GEMINI.md"
+}
+
+cmd_link() {
+  [ -d "$LOADOUT_DIR/.git" ] || die "no checkout at $LOADOUT_DIR; run 'loadout sync'"
+  link_skills
+  link_agents
+  link_global_rules
+}
+
+ensure_checkout() {
+  [ -d "$LOADOUT_DIR/.git" ] && return 0
+  mkdir -p "$(dirname "$LOADOUT_DIR")"
+  git clone --quiet --branch "$LOADOUT_BRANCH" "$LOADOUT_REPO" "$LOADOUT_DIR"
+  say "cloned $LOADOUT_REPO into $LOADOUT_DIR"
+}
+
+fast_forward() {
+  local upstream="origin/$LOADOUT_BRANCH"
+  git_in fetch --quiet origin "$LOADOUT_BRANCH" || { warn "fetch failed; keeping current checkout"; return 0; }
+  if [ -n "$(git_in status --porcelain)" ]; then
+    warn "local edits in $LOADOUT_DIR; not pulling (ship them with 'loadout push')"
+    return 0
+  fi
+  if [ "$(git_in rev-parse HEAD)" = "$(git_in rev-parse "$upstream")" ]; then
+    return 0
+  fi
+  if git_in merge-base --is-ancestor HEAD "$upstream"; then
+    git_in merge --quiet --ff-only "$upstream"
+    say "updated to $(git_in log -1 --format='%h %s')"
+  elif git_in merge-base --is-ancestor "$upstream" HEAD; then
+    warn "checkout is ahead of $upstream; run 'loadout push'"
+  else
+    warn "checkout has diverged from $upstream; resolve by hand in $LOADOUT_DIR"
+  fi
+}
+
+refresh_claude_plugin() {
+  has claude || return 0
+  if ! claude plugin marketplace list 2>/dev/null | grep -q 'loadout'; then
+    claude plugin marketplace add "$LOADOUT_DIR" >/dev/null && say "added loadout plugin marketplace"
+  else
+    claude plugin marketplace update loadout >/dev/null 2>&1 || warn "plugin marketplace update failed"
+  fi
+  if ! claude plugin list 2>/dev/null | grep -q 'loadout@loadout'; then
+    claude plugin install loadout@loadout >/dev/null && say "installed loadout plugin"
+  else
+    claude plugin update loadout@loadout >/dev/null 2>&1 || warn "plugin update failed"
+  fi
+}
+
+register_codex_mcp() {
+  has codex && has playwright-mcp || return 0
+  codex mcp get playwright >/dev/null 2>&1 && return 0
+  codex mcp add playwright -- playwright-mcp --headless >/dev/null && say "registered playwright MCP for codex"
+}
+
+register_antigravity_mcp() {
+  has agy && has playwright-mcp || return 0
+  agy mcp list 2>/dev/null | grep -q 'playwright' && return 0
+  agy mcp add playwright playwright-mcp --headless >/dev/null 2>&1 && say "registered playwright MCP for antigravity"
+}
+
+record_sync() {
+  mkdir -p "$STATE_DIR"
+  printf '%s %s\n' "$(date -Iseconds)" "$(git_in rev-parse --short HEAD)" > "$STATE_DIR/last-sync"
+}
+
+cmd_sync() {
+  ensure_checkout
+  fast_forward
+  cmd_link
+  refresh_claude_plugin
+  register_codex_mcp
+  register_antigravity_mcp
+  record_sync
+}
+
+sign_in() {
+  local label="$1" probe="$2" login="$3"
+  if ! has "${probe%% *}"; then
+    printf '  skip  %s: %s is not installed on this host\n' "$label" "${probe%% *}"
+    return 0
+  fi
+  if sh -c "$probe" >/dev/null 2>&1; then
+    printf '  ok    %s\n' "$label"
+    return 0
+  fi
+  printf '\n%s is not signed in. Running: %s\n' "$label" "$login"
+  sh -c "$login" || warn "$label sign-in did not finish; rerun 'loadout setup' later"
+}
+
+check_fleet_ssh() {
+  local host self
+  self="$(uname -n)"
+  for host in $LOADOUT_FLEET; do
+    [ "$host" = "$self" ] && continue
+    if ssh -o BatchMode=yes -o ConnectTimeout=5 "$host" true 2>/dev/null; then
+      printf '  ok    ssh %s\n' "$host"
+    else
+      printf '  FAIL  ssh %s: key auth over the tailnet failed; try ssh-copy-id %s\n' "$host" "$host"
+    fi
+  done
+}
+
+cmd_setup() {
+  [ -t 0 ] || die "setup signs you in interactively; run it in a terminal"
+  say "syncing skills"
+  cmd_sync
+  printf '\nsign-ins\n'
+  sign_in "GitHub CLI" "gh auth status" "gh auth login --web --git-protocol https && gh auth setup-git"
+  sign_in "Claude Code" "claude auth status" "claude auth login"
+  sign_in "Codex (GPT Sol seat)" "codex login status" "codex login"
+  sign_in "Antigravity CLI (Gemini seat)" "agy models" "echo 'Sign in in the browser, then type /exit.' && agy"
+  register_antigravity_mcp
+  printf '\nfleet\n'
+  check_fleet_ssh
+  printf '\nT3 Code\n'
+  if has agy_acp_server.par; then
+    printf '  ok    Antigravity ACP server on PATH; restart T3 Code, then sign in under Settings > Providers > Antigravity\n'
+  else
+    printf '  FAIL  agy_acp_server.par missing: enable roles.llm-tools in infinity-lab and rebuild\n'
+  fi
+  printf '\n'
+  cmd_doctor
+}
+
+cmd_push() {
+  local message="${1:-loadout: update from $(uname -n)}"
+  [ -d "$LOADOUT_DIR/.git" ] || die "no checkout at $LOADOUT_DIR"
+  if [ -n "$(git_in status --porcelain)" ]; then
+    git_in add -A
+    git_in commit --quiet -m "$message"
+    say "committed: $message"
+  fi
+  git_in pull --quiet --rebase origin "$LOADOUT_BRANCH"
+  git_in push --quiet origin "HEAD:$LOADOUT_BRANCH"
+  say "pushed $(git_in log -1 --format='%h %s')"
+  cmd_link
+  record_sync
+  cmd_fleet
+}
+
+sync_remote() {
+  local host="$1"
+  if ssh -o BatchMode=yes -o ConnectTimeout=5 "$host" 'systemctl --user start loadout-sync.service' 2>/dev/null; then
+    printf '  %-12s synced\n' "$host"
+  else
+    printf '  %-12s unreachable or failed (it will catch up on its timer)\n' "$host"
+  fi
+}
+
+cmd_fleet() {
+  local host self pids=()
+  self="$(uname -n)"
+  [ -n "$LOADOUT_FLEET" ] || { say "no fleet configured"; return 0; }
+  say "syncing fleet"
+  for host in $LOADOUT_FLEET; do
+    [ "$host" = "$self" ] && continue
+    sync_remote "$host" &
+    pids+=("$!")
+  done
+  [ "${#pids[@]}" -eq 0 ] || wait "${pids[@]}"
+}
+
+count_links() {
+  local dir="$1" entry count=0
+  for entry in "$dir"/*; do
+    points_into_checkout "$entry" && count=$((count + 1))
+  done
+  printf '%s' "$count"
+}
+
+cmd_status() {
+  [ -d "$LOADOUT_DIR/.git" ] || die "no checkout at $LOADOUT_DIR; run 'loadout sync'"
+  local counts
+  counts="$(git_in rev-list --left-right --count "HEAD...origin/$LOADOUT_BRANCH" 2>/dev/null || printf '? ?')"
+  printf 'checkout   %s\n' "$LOADOUT_DIR"
+  printf 'head       %s\n' "$(git_in log -1 --format='%h %s (%cr)')"
+  printf 'ahead      %s  behind %s (as of last fetch)\n' "${counts%%[[:space:]]*}" "${counts##*[[:space:]]}"
+  printf 'local edits %s\n' "$([ -n "$(git_in status --porcelain)" ] && echo yes || echo no)"
+  printf 'last sync  %s\n' "$(cat "$STATE_DIR/last-sync" 2>/dev/null || echo never)"
+  printf 'skills     claude %s, agents %s\n' "$(count_links "$HOME/.claude/skills")" "$(count_links "$HOME/.agents/skills")"
+  printf 'subagents  %s\n' "$(count_links "$AGENT_TARGET")"
+  printf 'fleet      %s\n' "${LOADOUT_FLEET:-<none>}"
+}
+
+check() {
+  local label="$1"
+  shift
+  if "$@" >/dev/null 2>&1; then
+    printf '  ok    %s\n' "$label"
+  else
+    printf '  FAIL  %s\n' "$label"
+  fi
+}
+
+cmd_doctor() {
+  local tool
+  printf 'tools\n'
+  for tool in git gh jq python3 node playwright playwright-mcp claude codex agy agy_acp_server.par; do
+    check "$tool" has "$tool"
+  done
+  printf 'auth\n'
+  check "gh auth" gh auth status
+  has codex && check "codex login" codex login status
+  printf 'browser\n'
+  check "PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH" test -x "${PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH:-/nonexistent}"
+  printf 'links\n'
+  check "checkout" test -d "$LOADOUT_DIR/.git"
+  check "claude imports global rules" grep -qxF "@$GLOBAL_RULES" "$HOME/.claude/CLAUDE.md"
+  check "codex global rules" points_into_checkout "$HOME/.codex/AGENTS.md"
+  check "gemini global rules" points_into_checkout "$HOME/.gemini/GEMINI.md"
+  has claude && check "claude plugin" sh -c 'claude plugin list 2>/dev/null | grep -q loadout@loadout'
+  if grep -qs 'hooks/load-project-direnv.sh' "$HOME/.claude/settings.json"; then
+    printf '  WARN  ~/.claude/settings.json still runs load-project-direnv.sh; the loadout plugin runs it too\n'
+  fi
+}
+
+main() {
+  local command="${1:-help}"
+  shift || true
+  case "$command" in
+    setup) cmd_setup ;;
+    sync) cmd_sync ;;
+    link) cmd_link ;;
+    push) cmd_push "$@" ;;
+    fleet) cmd_fleet ;;
+    status) cmd_status ;;
+    doctor) cmd_doctor ;;
+    path) printf '%s\n' "$LOADOUT_DIR" ;;
+    help | -h | --help) usage ;;
+    *) usage >&2; exit 2 ;;
+  esac
+}
+
+main "$@"
