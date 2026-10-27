@@ -50,3 +50,9 @@ What blocks a merge in this repo, beyond the generic rules in
 | App | Deploy id | Order | Health check |
 |---|---|---|---|
 | api | `…` | 1 | `curl -fsS https://…/healthz` |
+
+Post-deploy checks, run at every checkpoint (now, 10–15 min, 30 min, 1 h):
+
+- Logs: `…` (how to read errors since a timestamp)
+- Error rate / latency: `…`
+- Real user action: `…`

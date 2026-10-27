@@ -71,10 +71,51 @@ each app before the next.
 Run every health check in the table, then one real user action end to end
 (`prove`). The new version must be visible where the app reports it.
 
+## 8. Watch it settle
+
+Many release problems show up only after a while: a slow memory leak, a
+cron or queue job that runs later, cold caches, a migration that locks under
+real traffic. Check again at these points after the deploy finishes:
+
+| Checkpoint | When |
+|---|---|
+| 1 | right away (step 7) |
+| 2 | after 10–15 min |
+| 3 | after 30 min |
+| 4 | after 1 h |
+
+At each checkpoint:
+
+- Every health check in the deploy table passes, and the reported version is
+  still the release.
+- No app restarted since the deploy: compare status, uptime or restart
+  count with the previous checkpoint.
+- Logs since the deploy: count errors and new error kinds, and compare with
+  the same window before the deploy. Quote anything new.
+- The post-deploy checks from `.agents/ai-setup.md` (`## Release`): error
+  rate, latency, queue depth, whatever the repo lists.
+- At checkpoints 2 and 4, repeat the real user action.
+
+Wait between checkpoints with one background command that sleeps until the
+next one is due and then exits (in Claude Code, `run_in_background`; it wakes
+you when it ends). Never poll in a loop and never end your turn while
+checkpoints remain, or nobody wakes you. Stay quiet at a clean checkpoint.
+
+When a checkpoint fails, stop waiting and report at once: what broke, since
+when, the evidence, and the rollback option (redeploy the previous release
+commit). Ask before rolling back unless the user's request authorized it.
+Under full send or full stop, ask with the harness question tool.
+
 ## Report
 
 Version and why, tag and commit, release URL, each app deployed with its
-result, migrations that ran, health check output, anything not verified.
+result, migrations that ran, and one row per checkpoint:
+
+| Checkpoint | Time | Health | Restarts | Errors vs before | Repo checks |
+|---|---|---|---|---|---|
+| 1 | 14:02 | pass | 0 | 0 new | pass |
+
+Then anything not verified.
 
 Production changes are outside full-send's grant. Under full send or full
 stop, ask before deploying unless the user's request named the deploy.
