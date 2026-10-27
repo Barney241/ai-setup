@@ -3,7 +3,7 @@
 let
   cfg = config.programs.ai-setup;
 
-  aiSetup = pkgs.callPackage ./package.nix { };
+  aiSetupScript = pkgs.callPackage ./package.nix { };
 
   playwrightChromium = pkgs.runCommand "playwright-chromium" { } ''
     ln -s ${pkgs.playwright-driver.browsers}/chromium-*/chrome-linux64/chrome $out
@@ -18,6 +18,15 @@ let
 
   playwrightEnv = lib.optionalAttrs cfg.playwright.enable {
     PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH = "${playwrightChromium}";
+  };
+
+  aiSetup = pkgs.symlinkJoin {
+    name = "ai-setup";
+    paths = [ aiSetupScript ];
+    nativeBuildInputs = [ pkgs.makeWrapper ];
+    postBuild = ''
+      wrapProgram $out/bin/ai-setup ${lib.concatStringsSep " " (lib.mapAttrsToList (name: value: "--set-default ${name} ${lib.escapeShellArg value}") (aiSetupEnv // playwrightEnv))}
+    '';
   };
 
   toolchain = with pkgs; [ gh git jq python3 ripgrep ];
