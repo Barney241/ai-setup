@@ -7,7 +7,7 @@ description: Cut a release and deploy it. Use when the user asks to cut a releas
 
 A release is an annotated `vX.Y.Z` tag on the base branch, release notes,
 and (when the repo deploys) a prod deploy of exactly that commit. Repo
-specifics come from `.agents/loadout.md` `## Release`: version source, gates,
+specifics come from `.agents/ai-setup.md` `## Release`: version source, gates,
 deploy table, health checks. A repo with its own release skill wins.
 
 ## 1. Preflight
@@ -54,7 +54,7 @@ already exists stops and reports.
 
 ## 6. Deploy
 
-Use the deploy table from `.agents/loadout.md`, in its order, waiting for
+Use the deploy table from `.agents/ai-setup.md`, in its order, waiting for
 each app before the next.
 
 - Set build-time variables (a version build arg, public analytics keys)

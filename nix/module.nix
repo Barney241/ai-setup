@@ -1,19 +1,19 @@
 { config, lib, pkgs, ... }:
 
 let
-  cfg = config.programs.loadout;
+  cfg = config.programs.ai-setup;
 
-  loadout = pkgs.callPackage ./package.nix { };
+  aiSetup = pkgs.callPackage ./package.nix { };
 
   playwrightChromium = pkgs.runCommand "playwright-chromium" { } ''
     ln -s ${pkgs.playwright-driver.browsers}/chromium-*/chrome-linux64/chrome $out
   '';
 
-  loadoutEnv = {
-    LOADOUT_DIR = cfg.checkout;
-    LOADOUT_REPO = cfg.repo;
-    LOADOUT_BRANCH = cfg.branch;
-    LOADOUT_FLEET = lib.concatStringsSep " " cfg.fleet;
+  aiSetupEnv = {
+    AI_SETUP_DIR = cfg.checkout;
+    AI_SETUP_REPO = cfg.repo;
+    AI_SETUP_BRANCH = cfg.branch;
+    AI_SETUP_FLEET = lib.concatStringsSep " " cfg.fleet;
   };
 
   playwrightEnv = lib.optionalAttrs cfg.playwright.enable {
@@ -25,24 +25,24 @@ let
   playwrightTools = with pkgs; [ playwright-test playwright-mcp ];
 
   servicePath = lib.concatStringsSep ":" [
-    (lib.makeBinPath ([ loadout ] ++ toolchain ++ playwrightTools))
+    (lib.makeBinPath ([ aiSetup ] ++ toolchain ++ playwrightTools))
     "/etc/profiles/per-user/${config.home.username}/bin"
     "/run/current-system/sw/bin"
   ];
 in
 {
-  options.programs.loadout = {
-    enable = lib.mkEnableOption "the loadout agent skills, kept in sync across the fleet";
+  options.programs.ai-setup = {
+    enable = lib.mkEnableOption "the ai-setup agent skills, kept in sync across the fleet";
 
     checkout = lib.mkOption {
       type = lib.types.str;
-      default = "${config.home.homeDirectory}/Projects/personal/loadout";
+      default = "${config.home.homeDirectory}/Projects/personal/ai-setup";
       description = "Live git checkout that skills are linked from. Edit skills here.";
     };
 
     repo = lib.mkOption {
       type = lib.types.str;
-      default = "https://github.com/Barney241/loadout.git";
+      default = "https://github.com/Barney241/ai-setup.git";
       description = "Remote the checkout is cloned from and pushed to.";
     };
 
@@ -56,7 +56,7 @@ in
       type = lib.types.listOf lib.types.str;
       default = [ ];
       example = [ "desktop" "laptop" "server" ];
-      description = "SSH hosts that `loadout push` and `loadout fleet` sync immediately.";
+      description = "SSH hosts that `ai-setup push` and `ai-setup fleet` sync immediately.";
     };
 
     interval = lib.mkOption {
@@ -73,23 +73,23 @@ in
   };
 
   config = lib.mkIf cfg.enable {
-    home.packages = [ loadout ] ++ toolchain ++ lib.optionals cfg.playwright.enable playwrightTools;
+    home.packages = [ aiSetup ] ++ toolchain ++ lib.optionals cfg.playwright.enable playwrightTools;
 
-    home.sessionVariables = loadoutEnv // playwrightEnv;
+    home.sessionVariables = aiSetupEnv // playwrightEnv;
 
-    systemd.user.sessionVariables = loadoutEnv // playwrightEnv;
+    systemd.user.sessionVariables = aiSetupEnv // playwrightEnv;
 
-    systemd.user.services.loadout-sync = {
-      Unit.Description = "Fast-forward the loadout checkout and relink agent skills";
+    systemd.user.services.ai-setup-sync = {
+      Unit.Description = "Fast-forward the ai-setup checkout and relink agent skills";
       Service = {
         Type = "oneshot";
-        ExecStart = "${loadout}/bin/loadout sync";
-        Environment = lib.mapAttrsToList (name: value: "${name}=${value}") (loadoutEnv // playwrightEnv // { PATH = servicePath; });
+        ExecStart = "${aiSetup}/bin/ai-setup sync";
+        Environment = lib.mapAttrsToList (name: value: "${name}=${value}") (aiSetupEnv // playwrightEnv // { PATH = servicePath; });
       };
     };
 
-    systemd.user.timers.loadout-sync = {
-      Unit.Description = "Keep the loadout checkout in sync";
+    systemd.user.timers.ai-setup-sync = {
+      Unit.Description = "Keep the ai-setup checkout in sync";
       Timer = {
         OnStartupSec = "1min";
         OnUnitActiveSec = cfg.interval;
@@ -98,9 +98,9 @@ in
       Install.WantedBy = [ "timers.target" ];
     };
 
-    home.activation.loadoutLink = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+    home.activation.aiSetupLink = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
       if [ -d ${lib.escapeShellArg cfg.checkout}/.git ]; then
-        LOADOUT_DIR=${lib.escapeShellArg cfg.checkout} run ${loadout}/bin/loadout link || true
+        AI_SETUP_DIR=${lib.escapeShellArg cfg.checkout} run ${aiSetup}/bin/ai-setup link || true
       fi
     '';
   };

@@ -1,41 +1,41 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-LOADOUT_DIR="${LOADOUT_DIR:-$HOME/Projects/personal/loadout}"
-LOADOUT_REPO="${LOADOUT_REPO:-https://github.com/Barney241/loadout.git}"
-LOADOUT_BRANCH="${LOADOUT_BRANCH:-main}"
-LOADOUT_FLEET="${LOADOUT_FLEET:-}"
-STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/loadout"
+AI_SETUP_DIR="${AI_SETUP_DIR:-$HOME/Projects/personal/ai-setup}"
+AI_SETUP_REPO="${AI_SETUP_REPO:-https://github.com/Barney241/ai-setup.git}"
+AI_SETUP_BRANCH="${AI_SETUP_BRANCH:-main}"
+AI_SETUP_FLEET="${AI_SETUP_FLEET:-}"
+STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/ai-setup"
 SKILL_TARGETS=("$HOME/.claude/skills" "$HOME/.agents/skills")
 AGENT_TARGET="$HOME/.claude/agents"
-GLOBAL_RULES="$LOADOUT_DIR/global/AGENTS.md"
+GLOBAL_RULES="$AI_SETUP_DIR/global/AGENTS.md"
 
-say() { printf 'loadout: %s\n' "$*"; }
-warn() { printf 'loadout: warning: %s\n' "$*" >&2; }
-die() { printf 'loadout: error: %s\n' "$*" >&2; exit 1; }
+say() { printf 'ai-setup: %s\n' "$*"; }
+warn() { printf 'ai-setup: warning: %s\n' "$*" >&2; }
+die() { printf 'ai-setup: error: %s\n' "$*" >&2; exit 1; }
 has() { command -v "$1" >/dev/null 2>&1; }
-git_in() { git -C "$LOADOUT_DIR" "$@"; }
+git_in() { git -C "$AI_SETUP_DIR" "$@"; }
 
 usage() {
   cat <<EOF
-usage: loadout <command>
+usage: ai-setup <command>
 
   setup           one-time per host: sync, sign in to gh, Claude, Codex, Antigravity, check fleet SSH
   sync            clone if missing, fast-forward from origin, relink, refresh plugin and MCP
   link            relink skills, agents and global rules from the checkout (no network)
   push [message]  commit local edits, rebase on origin, push, then sync the fleet
-  fleet           trigger a sync on every other host in LOADOUT_FLEET
+  fleet           trigger a sync on every other host in AI_SETUP_FLEET
   status          checkout state, last sync, linked skills
   doctor          check tools, auth and links on this host
   path            print the checkout path
 
-checkout: $LOADOUT_DIR
-fleet:    ${LOADOUT_FLEET:-<none>}
+checkout: $AI_SETUP_DIR
+fleet:    ${AI_SETUP_FLEET:-<none>}
 EOF
 }
 
 points_into_checkout() {
-  [ -L "$1" ] && case "$(readlink "$1")" in "$LOADOUT_DIR"/*) return 0 ;; esac
+  [ -L "$1" ] && case "$(readlink "$1")" in "$AI_SETUP_DIR"/*) return 0 ;; esac
   return 1
 }
 
@@ -49,7 +49,7 @@ place_link() {
       ln -sfn "$source" "$target"
       return 0
     fi
-    warn "skipping $target: exists and is not managed by loadout"
+    warn "skipping $target: exists and is not managed by ai-setup"
     return 0
   fi
   mkdir -p "$(dirname "$target")"
@@ -71,7 +71,7 @@ link_skills() {
   local skill target_dir
   for target_dir in "${SKILL_TARGETS[@]}"; do
     mkdir -p "$target_dir"
-    for skill in "$LOADOUT_DIR"/skills/*/; do
+    for skill in "$AI_SETUP_DIR"/skills/*/; do
       [ -f "$skill/SKILL.md" ] || continue
       skill="${skill%/}"
       place_link "$skill" "$target_dir/$(basename "$skill")"
@@ -83,7 +83,7 @@ link_skills() {
 link_agents() {
   local agent
   mkdir -p "$AGENT_TARGET"
-  for agent in "$LOADOUT_DIR"/agents/*.md; do
+  for agent in "$AI_SETUP_DIR"/agents/*.md; do
     [ -f "$agent" ] || continue
     place_link "$agent" "$AGENT_TARGET/$(basename "$agent")"
   done
@@ -105,9 +105,9 @@ import_rules_into_claude() {
     return 0
   fi
   if [ -s "$claude_md" ]; then
-    printf '%s\n\n%s' "$line" "$(cat "$claude_md")" > "$claude_md.loadout-tmp"
-    printf '\n' >> "$claude_md.loadout-tmp"
-    mv "$claude_md.loadout-tmp" "$claude_md"
+    printf '%s\n\n%s' "$line" "$(cat "$claude_md")" > "$claude_md.ai-setup-tmp"
+    printf '\n' >> "$claude_md.ai-setup-tmp"
+    mv "$claude_md.ai-setup-tmp" "$claude_md"
   else
     printf '%s\n' "$line" > "$claude_md"
   fi
@@ -122,24 +122,24 @@ link_global_rules() {
 }
 
 cmd_link() {
-  [ -d "$LOADOUT_DIR/.git" ] || die "no checkout at $LOADOUT_DIR; run 'loadout sync'"
+  [ -d "$AI_SETUP_DIR/.git" ] || die "no checkout at $AI_SETUP_DIR; run 'ai-setup sync'"
   link_skills
   link_agents
   link_global_rules
 }
 
 ensure_checkout() {
-  [ -d "$LOADOUT_DIR/.git" ] && return 0
-  mkdir -p "$(dirname "$LOADOUT_DIR")"
-  git clone --quiet --branch "$LOADOUT_BRANCH" "$LOADOUT_REPO" "$LOADOUT_DIR"
-  say "cloned $LOADOUT_REPO into $LOADOUT_DIR"
+  [ -d "$AI_SETUP_DIR/.git" ] && return 0
+  mkdir -p "$(dirname "$AI_SETUP_DIR")"
+  git clone --quiet --branch "$AI_SETUP_BRANCH" "$AI_SETUP_REPO" "$AI_SETUP_DIR"
+  say "cloned $AI_SETUP_REPO into $AI_SETUP_DIR"
 }
 
 fast_forward() {
-  local upstream="origin/$LOADOUT_BRANCH"
-  git_in fetch --quiet origin "$LOADOUT_BRANCH" || { warn "fetch failed; keeping current checkout"; return 0; }
+  local upstream="origin/$AI_SETUP_BRANCH"
+  git_in fetch --quiet origin "$AI_SETUP_BRANCH" || { warn "fetch failed; keeping current checkout"; return 0; }
   if [ -n "$(git_in status --porcelain)" ]; then
-    warn "local edits in $LOADOUT_DIR; not pulling (ship them with 'loadout push')"
+    warn "local edits in $AI_SETUP_DIR; not pulling (ship them with 'ai-setup push')"
     return 0
   fi
   if [ "$(git_in rev-parse HEAD)" = "$(git_in rev-parse "$upstream")" ]; then
@@ -149,14 +149,14 @@ fast_forward() {
     git_in merge --quiet --ff-only "$upstream"
     say "updated to $(git_in log -1 --format='%h %s')"
   elif git_in merge-base --is-ancestor "$upstream" HEAD; then
-    warn "checkout is ahead of $upstream; run 'loadout push'"
+    warn "checkout is ahead of $upstream; run 'ai-setup push'"
   else
-    warn "checkout has diverged from $upstream; resolve by hand in $LOADOUT_DIR"
+    warn "checkout has diverged from $upstream; resolve by hand in $AI_SETUP_DIR"
   fi
 }
 
 installed_plugin_commit() {
-  jq -r '.plugins["loadout@loadout"][0].gitCommitSha // empty' "$HOME/.claude/plugins/installed_plugins.json" 2>/dev/null || true
+  jq -r '.plugins["ai-setup@ai-setup"][0].gitCommitSha // empty' "$HOME/.claude/plugins/installed_plugins.json" 2>/dev/null || true
 }
 
 plugin_is_current() {
@@ -170,16 +170,16 @@ plugin_is_current() {
 refresh_claude_plugin() {
   has claude || return 0
   plugin_is_current && return 0
-  if claude plugin marketplace list 2>/dev/null | grep -q 'loadout'; then
-    claude plugin marketplace update loadout >/dev/null 2>&1 || true
+  if claude plugin marketplace list 2>/dev/null | grep -q 'ai-setup'; then
+    claude plugin marketplace update ai-setup >/dev/null 2>&1 || true
   else
-    claude plugin marketplace add "$LOADOUT_DIR" >/dev/null || { warn "could not add the loadout plugin marketplace"; return 0; }
+    claude plugin marketplace add "$AI_SETUP_DIR" >/dev/null || { warn "could not add the ai-setup plugin marketplace"; return 0; }
   fi
-  claude plugin uninstall loadout@loadout >/dev/null 2>&1 || true
-  if claude plugin install loadout@loadout >/dev/null; then
-    say "installed loadout plugin at $(git_in rev-parse --short HEAD)"
+  claude plugin uninstall ai-setup@ai-setup >/dev/null 2>&1 || true
+  if claude plugin install ai-setup@ai-setup >/dev/null; then
+    say "installed ai-setup plugin at $(git_in rev-parse --short HEAD)"
   else
-    warn "loadout plugin install failed"
+    warn "ai-setup plugin install failed"
   fi
 }
 
@@ -221,13 +221,13 @@ sign_in() {
     return 0
   fi
   printf '\n%s is not signed in. Running: %s\n' "$label" "$login"
-  sh -c "$login" || warn "$label sign-in did not finish; rerun 'loadout setup' later"
+  sh -c "$login" || warn "$label sign-in did not finish; rerun 'ai-setup setup' later"
 }
 
 check_fleet_ssh() {
   local host self
   self="$(uname -n)"
-  for host in $LOADOUT_FLEET; do
+  for host in $AI_SETUP_FLEET; do
     [ "$host" = "$self" ] && continue
     if ssh -o BatchMode=yes -o ConnectTimeout=5 "$host" true 2>/dev/null; then
       printf '  ok    ssh %s\n' "$host"
@@ -260,15 +260,15 @@ cmd_setup() {
 }
 
 cmd_push() {
-  local message="${1:-loadout: update from $(uname -n)}"
-  [ -d "$LOADOUT_DIR/.git" ] || die "no checkout at $LOADOUT_DIR"
+  local message="${1:-ai-setup: update from $(uname -n)}"
+  [ -d "$AI_SETUP_DIR/.git" ] || die "no checkout at $AI_SETUP_DIR"
   if [ -n "$(git_in status --porcelain)" ]; then
     git_in add -A
     git_in commit --quiet -m "$message"
     say "committed: $message"
   fi
-  git_in pull --quiet --rebase origin "$LOADOUT_BRANCH"
-  git_in push --quiet origin "HEAD:$LOADOUT_BRANCH"
+  git_in pull --quiet --rebase origin "$AI_SETUP_BRANCH"
+  git_in push --quiet origin "HEAD:$AI_SETUP_BRANCH"
   say "pushed $(git_in log -1 --format='%h %s')"
   cmd_link
   record_sync
@@ -277,7 +277,7 @@ cmd_push() {
 
 sync_remote() {
   local host="$1"
-  if ssh -o BatchMode=yes -o ConnectTimeout=5 "$host" 'systemctl --user start loadout-sync.service' 2>/dev/null; then
+  if ssh -o BatchMode=yes -o ConnectTimeout=5 "$host" 'systemctl --user start ai-setup-sync.service' 2>/dev/null; then
     printf '  %-12s synced\n' "$host"
   else
     printf '  %-12s unreachable or failed (it will catch up on its timer)\n' "$host"
@@ -287,9 +287,9 @@ sync_remote() {
 cmd_fleet() {
   local host self pids=()
   self="$(uname -n)"
-  [ -n "$LOADOUT_FLEET" ] || { say "no fleet configured"; return 0; }
+  [ -n "$AI_SETUP_FLEET" ] || { say "no fleet configured"; return 0; }
   say "syncing fleet"
-  for host in $LOADOUT_FLEET; do
+  for host in $AI_SETUP_FLEET; do
     [ "$host" = "$self" ] && continue
     sync_remote "$host" &
     pids+=("$!")
@@ -306,17 +306,17 @@ count_links() {
 }
 
 cmd_status() {
-  [ -d "$LOADOUT_DIR/.git" ] || die "no checkout at $LOADOUT_DIR; run 'loadout sync'"
+  [ -d "$AI_SETUP_DIR/.git" ] || die "no checkout at $AI_SETUP_DIR; run 'ai-setup sync'"
   local counts
-  counts="$(git_in rev-list --left-right --count "HEAD...origin/$LOADOUT_BRANCH" 2>/dev/null || printf '? ?')"
-  printf 'checkout   %s\n' "$LOADOUT_DIR"
+  counts="$(git_in rev-list --left-right --count "HEAD...origin/$AI_SETUP_BRANCH" 2>/dev/null || printf '? ?')"
+  printf 'checkout   %s\n' "$AI_SETUP_DIR"
   printf 'head       %s\n' "$(git_in log -1 --format='%h %s (%cr)')"
   printf 'ahead      %s  behind %s (as of last fetch)\n' "${counts%%[[:space:]]*}" "${counts##*[[:space:]]}"
   printf 'local edits %s\n' "$([ -n "$(git_in status --porcelain)" ] && echo yes || echo no)"
   printf 'last sync  %s\n' "$(cat "$STATE_DIR/last-sync" 2>/dev/null || echo never)"
   printf 'skills     claude %s, agents %s\n' "$(count_links "$HOME/.claude/skills")" "$(count_links "$HOME/.agents/skills")"
   printf 'subagents  %s\n' "$(count_links "$AGENT_TARGET")"
-  printf 'fleet      %s\n' "${LOADOUT_FLEET:-<none>}"
+  printf 'fleet      %s\n' "${AI_SETUP_FLEET:-<none>}"
 }
 
 check() {
@@ -341,13 +341,13 @@ cmd_doctor() {
   printf 'browser\n'
   check "PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH" test -x "${PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH:-/nonexistent}"
   printf 'links\n'
-  check "checkout" test -d "$LOADOUT_DIR/.git"
+  check "checkout" test -d "$AI_SETUP_DIR/.git"
   check "claude imports global rules" grep -qxF "@$GLOBAL_RULES" "$HOME/.claude/CLAUDE.md"
   check "codex global rules" points_into_checkout "$HOME/.codex/AGENTS.md"
   check "gemini global rules" points_into_checkout "$HOME/.gemini/GEMINI.md"
-  has claude && check "claude plugin" sh -c 'claude plugin list 2>/dev/null | grep -q loadout@loadout'
+  has claude && check "claude plugin" sh -c 'claude plugin list 2>/dev/null | grep -q ai-setup@ai-setup'
   if grep -qs 'hooks/load-project-direnv.sh' "$HOME/.claude/settings.json"; then
-    printf '  WARN  ~/.claude/settings.json still runs load-project-direnv.sh; the loadout plugin runs it too\n'
+    printf '  WARN  ~/.claude/settings.json still runs load-project-direnv.sh; the ai-setup plugin runs it too\n'
   fi
 }
 
@@ -362,7 +362,7 @@ main() {
     fleet) cmd_fleet ;;
     status) cmd_status ;;
     doctor) cmd_doctor ;;
-    path) printf '%s\n' "$LOADOUT_DIR" ;;
+    path) printf '%s\n' "$AI_SETUP_DIR" ;;
     help | -h | --help) usage ;;
     *) usage >&2; exit 2 ;;
   esac

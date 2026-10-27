@@ -1,7 +1,7 @@
 { lib, writeShellApplication, git, openssh, coreutils, gnugrep, jq }:
 
 writeShellApplication {
-  name = "loadout";
+  name = "ai-setup";
   runtimeInputs = [ git openssh coreutils gnugrep jq ];
-  text = lib.removePrefix "#!/usr/bin/env bash\n" (builtins.readFile ../bin/loadout);
+  text = lib.removePrefix "#!/usr/bin/env bash\n" (builtins.readFile ../bin/ai-setup);
 }

@@ -43,7 +43,7 @@ one appears.
 ## Steps
 
 Repo settings (base branch, checks, gating bots, merge method) come from
-`.agents/loadout.md` when it exists.
+`.agents/ai-setup.md` when it exists.
 
 1. **Finish the change.** Complete the goal from the user's request with the
    smallest change that works. Fix the case that happened, not every case

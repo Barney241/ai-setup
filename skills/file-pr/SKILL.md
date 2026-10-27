@@ -9,7 +9,7 @@ Before filing, check whether a PR for this branch already exists. Review the
 diff locally against the base branch (usually `origin/main`) to make sure its
 contents match the goal.
 
-Repo settings come from `.agents/loadout.md` (`## Pull requests`) when it
+Repo settings come from `.agents/ai-setup.md` (`## Pull requests`) when it
 exists: base branch, draft policy, ticket pattern, title convention, a pre-PR
 review command. Preflight:
 

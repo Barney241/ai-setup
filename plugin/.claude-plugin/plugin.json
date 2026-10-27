@@ -1,8 +1,8 @@
 {
-  "name": "loadout",
+  "name": "ai-setup",
   "version": "1.0.0",
   "description": "Fleet-wide hooks and MCP servers: secret-file guard, per-project direnv loading, headless Playwright MCP.",
   "author": { "name": "Barney241" },
-  "repository": "https://github.com/Barney241/loadout",
+  "repository": "https://github.com/Barney241/ai-setup",
   "license": "MIT"
 }

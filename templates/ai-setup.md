@@ -1,8 +1,8 @@
-# Loadout settings for this repo
+# ai-setup settings for this repo
 
-Copy to `.agents/loadout.md` and keep only the sections that differ from the
-defaults. Generic loadout skills read this file. Anything that is true only of
-this repo belongs here or in a project skill, never in loadout.
+Copy to `.agents/ai-setup.md` and keep only the sections that differ from the
+defaults. Generic ai-setup skills read this file. Anything that is true only of
+this repo belongs here or in a project skill, never in ai-setup.
 
 ## Branches
 

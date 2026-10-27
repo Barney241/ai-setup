@@ -70,7 +70,7 @@ Review only. Do not edit, commit, push, comment on PRs, or start subagents.
 Repo: <abs path> Base: <sha> Intent: <intent> Out of scope: <scope> Checks: <results>
 See: git diff <base> [-- <paths>]; git status --short (read untracked).
 If the precision-review skill is installed, follow it, plus the repo's
-.agents/loadout.md "Review blockers" and any REVIEW.md files.
+.agents/ai-setup.md "Review blockers" and any REVIEW.md files.
 Read surrounding code. Find bugs, broken callers, mismatch with intent.
 Skip style unless it hides a bug. Hold to the smallest change. Flag code,
 tests, or guards the intent does not need. Other paths, rare cases, small

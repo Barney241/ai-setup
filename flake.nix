@@ -1,5 +1,5 @@
 {
-  description = "loadout: the agent skills, hooks and tools I carry to every host and every project";
+  description = "ai-setup: the agent skills, hooks and tools I carry to every host and every project";
 
   inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
 
@@ -16,7 +16,7 @@
       });
 
       checks = forAllSystems (pkgs: {
-        loadout = pkgs.callPackage ./nix/package.nix { };
+        ai-setup = pkgs.callPackage ./nix/package.nix { };
       });
     };
 }

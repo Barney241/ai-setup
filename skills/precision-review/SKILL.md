@@ -14,7 +14,7 @@ because nobody learns it existed. Principles, not procedure.
 Load, all additive, per file:
 
 1. This contract.
-2. `.agents/loadout.md` `## Review blockers` and its risk paths.
+2. `.agents/ai-setup.md` `## Review blockers` and its risk paths.
 3. `.agents/review-rules/` if the repo has them (general, per language,
    shared conventions, and a map of exclusions).
 4. Every `REVIEW.md` from the file's directory up to the root. Nearest wins.

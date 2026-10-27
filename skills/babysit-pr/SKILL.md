@@ -71,7 +71,7 @@ If check reads come back FORBIDDEN, the token cannot read Checks. Run
 say.
 
 If the repo ships its own PR-watch skill or documents its flow in
-`.agents/loadout.md`, follow that. It knows the repo's gating bots, draft
+`.agents/ai-setup.md`, follow that. It knows the repo's gating bots, draft
 policy, and gate commands.
 
 ## GitHub rate limits

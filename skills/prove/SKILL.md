@@ -12,12 +12,12 @@ or "the tests cover it" is not proof.
 ## 1. What changed
 
 `git diff --name-only $(git merge-base HEAD origin/<base>)` plus
-`git status --short`. The base comes from `.agents/loadout.md`, else the repo
+`git status --short`. The base comes from `.agents/ai-setup.md`, else the repo
 default branch.
 
 ## 2. Which checks
 
-Take the check table from `.agents/loadout.md` (`## Checks`). Without one, use
+Take the check table from `.agents/ai-setup.md` (`## Checks`). Without one, use
 the repo's `AGENTS.md` / `CLAUDE.md`, then whatever CI runs
 (`.github/workflows/*`, `Makefile`, `justfile`, `package.json` scripts). Run
 every row whose path matches. Run the narrowest check while iterating and the
@@ -49,7 +49,7 @@ Pick the first that is available:
    `preview_navigate`, `preview_click`, `preview_type`, `preview_snapshot`.
    Use `preview_recording_start` / `preview_recording_stop` for flows.
    `device_screenshot` for simulators and devices.
-2. **Playwright MCP** (`playwright` server, from the loadout plugin). Headless,
+2. **Playwright MCP** (`playwright` server, from the ai-setup plugin). Headless,
    isolated profile, Nix Chromium. Navigate, act, screenshot.
 3. **The repo's Playwright runner.** Write a throwaway spec and run it with
    the project's runner (`pnpm exec playwright test <spec>`). On NixOS, point

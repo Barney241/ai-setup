@@ -83,7 +83,7 @@ shared `/tmp/claude/` is used by every session: fixed names collide, and
 
 - A missing `config.worktree` makes bwrap fail. Fix it with `touch`, never
   `git worktree prune`.
-- `direnv` does not reach non-interactive shells. The loadout plugin's
+- `direnv` does not reach non-interactive shells. The ai-setup plugin's
   session hook loads it and links `.env.local` from the main checkout.
 - Lint and build caches can replay paths from sibling worktrees. Clear the
   tool's cache when findings point outside the current worktree.

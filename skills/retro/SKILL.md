@@ -29,8 +29,8 @@ instruction you followed, which one you missed, which one was absent.
 
 | Category | Fix goes to |
 |---|---|
-| A loadout skill pointed you wrong or missed a case that holds in any repo | the loadout skill (`loadout path` for the checkout) |
-| Something only true of this repo | `.agents/loadout.md`, the repo's `AGENTS.md`, or a project skill |
+| An ai-setup skill pointed you wrong or missed a case that holds in any repo | the ai-setup skill (`ai-setup path` for the checkout) |
+| Something only true of this repo | `.agents/ai-setup.md`, the repo's `AGENTS.md`, or a project skill |
 | A recurring task with no skill | a new skill: name and one-line trigger |
 | A tooling dead end and the workaround that worked | the papercuts log |
 | A wrong assumption | the doc where the next session will look, with the signal that would have corrected it |
@@ -40,7 +40,7 @@ Rules:
 - **Evidence or it doesn't go on the list.**
 - **Generalize the rule, keep the incident as evidence.** Strip the feature
   name from the fix unless the fact is genuinely specific to it.
-- **Never put repo specifics in loadout.** Loadout is public and generic.
+- **Never put repo specifics in ai-setup.** ai-setup is public and generic.
   Service names, hosts, internal tools and credentials stay in the project.
 - **Fix the root.** If a wrong fact lives in three places, fix all three.
 - **Prune while you are there.** Skills grow bloated. Cut lines that no
@@ -49,9 +49,9 @@ Rules:
 - **Confirm before applying**, except a trivially correct factual fix.
 - No memory files. See the global rules.
 
-## Shipping a loadout fix
+## Shipping an ai-setup fix
 
-Edit in the checkout, then `loadout push "<skill>: <what changed and why>"`.
+Edit in the checkout, then `ai-setup push "<skill>: <what changed and why>"`.
 It commits, pushes, and syncs every host.
 
 ## Output
@@ -63,7 +63,7 @@ After:  …
 Why:    <ingredient → payoff>
 
 ## Fixes
-1. [loadout:<skill>] <finding + evidence> → <exact edit>
+1. [ai-setup:<skill>] <finding + evidence> → <exact edit>
 2. [project] <finding + evidence> → <file and edit>
 3. [papercut] <line>
 Apply these?

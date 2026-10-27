@@ -1,7 +1,7 @@
 # Coolify quirks
 
 Learned on self-hosted Coolify v4 behind Traefik. App UUIDs, hosts and env
-belong in the repo's `.agents/loadout.md`, not here.
+belong in the repo's `.agents/ai-setup.md`, not here.
 
 ## Deploying
 

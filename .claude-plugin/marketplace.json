@@ -1,12 +1,12 @@
 {
-  "name": "loadout",
+  "name": "ai-setup",
   "owner": {
     "name": "Barney241"
   },
-  "description": "Barney241 loadout: fleet-wide hooks and MCP servers for Claude Code.",
+  "description": "Barney241 ai-setup: fleet-wide hooks and MCP servers for Claude Code.",
   "plugins": [
     {
-      "name": "loadout",
+      "name": "ai-setup",
       "source": "./plugin",
       "description": "Fleet-wide hooks and MCP servers: secret-file guard, per-project direnv loading, headless Playwright MCP."
     }

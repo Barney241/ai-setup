@@ -1,7 +1,7 @@
-# Loadout: fleet-wide agent rules
+# ai-setup: fleet-wide agent rules
 
 These rules travel with me to every host and every project. Project files
-(`AGENTS.md`, `CLAUDE.md`, `.agents/loadout.md`) win wherever they are more
+(`AGENTS.md`, `CLAUDE.md`, `.agents/ai-setup.md`) win wherever they are more
 specific.
 
 ## No code comments
@@ -16,8 +16,8 @@ replace it. Add it only after confirmation.
 ## No memory
 
 Auto-memory is off. Never write to or rely on memory files. Knowledge worth
-keeping goes into a skill in loadout (if it holds in any repo), into the
-project's `AGENTS.md` or `.agents/loadout.md` (if it is specific to one repo),
+keeping goes into a skill in ai-setup (if it holds in any repo), into the
+project's `AGENTS.md` or `.agents/ai-setup.md` (if it is specific to one repo),
 or into the papercuts log. Propose the exact edit instead of writing memory.
 
 ## Papercuts
@@ -48,7 +48,7 @@ worktrees of a repo share one file.
 - Nix commands need the daemon socket, which the sandbox blocks. Run them with
   the sandbox bypass.
 - Playwright: `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` points at a Nix-built
-  Chromium that runs on NixOS. The `playwright` MCP server (loadout plugin)
+  Chromium that runs on NixOS. The `playwright` MCP server (ai-setup plugin)
   already uses it.
 
 ## Models and harnesses
@@ -74,15 +74,15 @@ link, the blocker, and options with your recommendation first.
 
 ## Per-project configuration
 
-Generic skills read repo-specific settings from `.agents/loadout.md` when it
+Generic skills read repo-specific settings from `.agents/ai-setup.md` when it
 exists: base branch, gate and check commands, review blockers, gating review
 bots, draft policy, ticket pattern, release and deploy table. Fall back to
 `AGENTS.md` / `CLAUDE.md`, then to what CI runs. A repo that ships its own
 skill for the same job (its own release or PR-watch skill) wins over the
 generic one.
 
-## Improving the loadout
+## Improving ai-setup
 
 Skills are code. When an agent behaves badly, ask why, find the gap in the
-skill, and patch the skill (`retro`). Edits go to the loadout checkout
-(`loadout path`) and ship with `loadout push`, which syncs every host.
+skill, and patch the skill (`retro`). Edits go to the ai-setup checkout
+(`ai-setup path`) and ship with `ai-setup push`, which syncs every host.
