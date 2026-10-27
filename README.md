@@ -65,17 +65,6 @@ skills live alongside. A new skill reaches every host without a rebuild.
 | `ai-setup push [msg]` | commit, rebase, push, sync every other host now |
 | `ai-setup status` / `doctor` | checkout state and last sync / tools, auth, links |
 
-### Options I considered for fleet sync
-
-| Option | Verdict |
-|---|---|
-| Live git checkout + user timer | **Used.** Editable in place, history, no rebuild per edit, offline hosts catch up. |
-| SSH fan-out on push (over Tailscale) | **Used** on top, so a push lands everywhere in seconds. Unreachable hosts fall back to the timer. |
-| Skills as a Nix flake input | Used only for the module and dependencies. For skill text it means a flake update plus a rebuild on every host for each edit, and read-only skills you can't patch mid-session. |
-| Claude plugin marketplace auto-update | Used only for hooks and MCP. Plugin skills are Claude-only and namespaced; Codex and Antigravity would not see them. |
-| Syncthing | No: no history or review, conflict files instead of merges. |
-| GitHub webhook to a scheduler | No: needs a public endpoint. SSH fan-out does the same over the tailnet. |
-
 ## Install
 
 NixOS / home-manager (what I use):
