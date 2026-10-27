@@ -13,7 +13,7 @@ project skill.
 ## Skills
 
 Descriptions are triggers, not summaries. Say the words, chain them in one
-sentence: "take over #123, sol loop, full stop".
+sentence: "modernize #123, sol loop, full stop".
 
 | Skill | Say | What it does |
 |---|---|---|
@@ -25,7 +25,6 @@ sentence: "take over #123, sol loop, full stop".
 | `precision-review` | "precision review" | The review contract every reviewer works to: evidence, severity and effort, scope. |
 | `file-pr` | "file a PR" | Short PR that leads with the problem. Repo preflight from `.agents/ai-setup.md`. |
 | `babysit-pr` | "babysit" | Watches a PR through CI and review bots and fixes the real findings. |
-| `takeover` | "take over" | Finishes someone else's PR, branch or agent thread and keeps their credit. |
 | `modernize` | "modernize" | Rebases an old PR and decides whether it should still exist. |
 | `cut-release` | "cut a release" | Version, gates that mirror prod, tag, notes, deploy, health checks. |
 | `retro` | "retro" | Why did the agent do that? A better next prompt, and a patch to the skill. |

@@ -6,7 +6,7 @@ License, Copyright (c) 2026 Theo Browne. Its license text is in
 [`LICENSES-tstack`](LICENSES-tstack).
 
 Vendored from tstack and adapted: `full-send`, `full-stop`, `sol-loop`,
-`council`, `file-pr`, `babysit-pr` (including `scripts/pr-wait`), `takeover`,
+`council`, `file-pr`, `babysit-pr` (including `scripts/pr-wait`),
 `modernize`, `leaving-pr-comments`.
 
 To see what upstream changed since the import:
