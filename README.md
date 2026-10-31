@@ -83,8 +83,7 @@ T3 Code ─────┘                           redacts, drops noise       
                                                                           └─ web dashboard
 ```
 
-The dashboard runs on the server at `http://<address>:8125`, for any device on
-the tailnet: this period against the last, tokens per day, biggest blockers,
+The dashboard runs on the server at `http://<host>:8125`, on all interfaces: this period against the last, tokens per day, biggest blockers,
 spending by project and the biggest tasks. It runs the same SQL as
 `ai-setup report`, so the numbers match what agents see.
 
@@ -104,9 +103,10 @@ services.ai-setup-telemetry = {
 };
 ```
 
-It binds only to loopback and `address`, so it does not rely on the firewall.
-Anyone on the tailnet can send telemetry and open the dashboard, which shows
-task titles; only `readers` can run SQL, as the read-only `agent` user. ClickHouse's own `default` user stays on loopback.
+ClickHouse and the collector bind only to loopback and `address`, so they do
+not rely on the firewall. The dashboard binds to all interfaces and shows task
+titles without a login, so use the firewall to limit it. Anyone on the tailnet
+can send telemetry; only `readers` can run SQL, as the read-only `agent` user. ClickHouse's own `default` user stays on loopback.
 
 Clients, in home-manager:
 

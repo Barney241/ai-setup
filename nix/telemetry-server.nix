@@ -53,7 +53,7 @@ in
     dashboardPort = lib.mkOption {
       type = lib.types.port;
       default = 8125;
-      description = "Port of the web dashboard. Any device on the tailnet can open it.";
+      description = "Port of the web dashboard. It listens on all interfaces, so restrict it with the firewall if the LAN is not trusted.";
     };
 
     readers = lib.mkOption {
@@ -180,7 +180,7 @@ in
       wantedBy = [ "multi-user.target" ];
       after = [ "clickhouse.service" "tailscaled.service" ];
       environment = {
-        DASHBOARD_ADDRESS = cfg.address;
+        DASHBOARD_ADDRESSES = "0.0.0.0";
         DASHBOARD_PORT = toString cfg.dashboardPort;
         DASHBOARD_CLICKHOUSE_URL = "http://127.0.0.1:${toString cfg.httpPort}";
       };
@@ -197,19 +197,18 @@ in
       wantedBy = [ "multi-user.target" ];
       after = [ "opentelemetry-collector.service" ];
       requires = [ "clickhouse.service" ];
+      script = ''
+        client="${config.services.clickhouse.package}/bin/clickhouse-client --host=127.0.0.1 --port=${toString cfg.nativePort}"
+        until [ "$($client --query 'EXISTS TABLE otel.otel_logs' 2>/dev/null)" = 1 ]; do
+          sleep 1
+        done
+        $client --multiquery --queries-file=${../telemetry/schema.sql}
+      '';
       serviceConfig = {
         Type = "oneshot";
         RemainAfterExit = true;
         DynamicUser = true;
-        Restart = "on-failure";
-        RestartSec = 5;
-        ExecStart = lib.escapeShellArgs [
-          "${config.services.clickhouse.package}/bin/clickhouse-client"
-          "--host=127.0.0.1"
-          "--port=${toString cfg.nativePort}"
-          "--multiquery"
-          "--queries-file=${../telemetry/schema.sql}"
-        ];
+        TimeoutStartSec = 300;
       };
     };
   };

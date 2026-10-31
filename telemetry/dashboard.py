@@ -1,5 +1,6 @@
 import json
 import os
+import threading
 import time
 import urllib.parse
 import urllib.request
@@ -12,7 +13,7 @@ PAGE = (HERE / "dashboard.html").read_bytes()
 ALLOWED_DAYS = {"7", "14", "30"}
 CACHE_SECONDS = 30
 
-listen_address = os.environ["DASHBOARD_ADDRESS"]
+listen_addresses = os.environ["DASHBOARD_ADDRESSES"].split()
 listen_port = int(os.environ["DASHBOARD_PORT"])
 clickhouse_url = os.environ["DASHBOARD_CLICKHOUSE_URL"]
 cache = {}
@@ -66,4 +67,9 @@ class Handler(BaseHTTPRequestHandler):
         pass
 
 
-ThreadingHTTPServer((listen_address, listen_port), Handler).serve_forever()
+servers = [ThreadingHTTPServer((address, listen_port), Handler) for address in listen_addresses]
+threads = [threading.Thread(target=server.serve_forever) for server in servers]
+for thread in threads:
+    thread.start()
+for thread in threads:
+    thread.join()
