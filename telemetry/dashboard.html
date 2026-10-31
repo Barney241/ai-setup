@@ -1,0 +1,317 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fleet agents</title>
+<link rel="icon" href="data:,">
+<style>
+:root {
+  color-scheme: dark;
+  --surface-0: #111110;
+  --surface-1: #1a1a19;
+  --text-primary: #f0efec;
+  --text-secondary: #c3c2b7;
+  --text-muted: #9c9b92;
+  --grid: #2f2f2c;
+  --series-1: #3987e5;
+  --series-previous: #77766f;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--surface-0); color: var(--text-primary); font: 14px/1.45 system-ui, sans-serif; }
+main { max-width: 1240px; margin: 0 auto; padding: 24px 20px 48px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; }
+header { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; }
+h1 { font-size: 20px; margin: 0; }
+h2 { font-size: 14px; margin: 0 0 2px; }
+.note { color: var(--text-muted); font-size: 12px; margin: 0 0 12px; }
+.ranges { display: flex; gap: 4px; }
+.ranges button { font: inherit; padding: 4px 12px; min-height: 32px; border: 1px solid var(--grid); border-radius: 6px; background: var(--surface-1); color: var(--text-secondary); cursor: pointer; }
+.ranges button[aria-pressed="true"] { color: var(--text-primary); border-color: var(--text-secondary); font-weight: 600; }
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; }
+.tile, .panel { background: var(--surface-1); border: 1px solid var(--grid); border-radius: 8px; padding: 14px 16px; min-width: 0; }
+.tile .label { color: var(--text-secondary); font-size: 12px; }
+.tile .value { font-size: 26px; font-weight: 600; margin: 2px 0; font-variant-numeric: tabular-nums; }
+.tile .delta { color: var(--text-secondary); font-size: 12px; font-variant-numeric: tabular-nums; }
+.columns { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(420px, 100%), 1fr)); gap: 16px; min-width: 0; }
+.chart { position: relative; }
+.chart svg { display: block; width: 100%; height: 240px; }
+.legend { display: flex; gap: 16px; color: var(--text-secondary); font-size: 12px; margin-bottom: 6px; }
+.legend i { display: inline-block; width: 14px; height: 0; border-top: 2px solid; margin-right: 6px; vertical-align: middle; }
+.tooltip { position: absolute; pointer-events: none; background: var(--surface-0); border: 1px solid var(--grid); border-radius: 6px; padding: 6px 8px; font-size: 12px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.scroll { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; }
+th { text-align: left; color: var(--text-muted); font-weight: 500; font-size: 12px; padding: 4px 8px 4px 0; border-bottom: 1px solid var(--grid); white-space: nowrap; }
+td { padding: 6px 8px 6px 0; border-bottom: 1px solid var(--grid); vertical-align: top; }
+td.number, th.number { text-align: right; white-space: nowrap; }
+td.wide { min-width: 220px; overflow-wrap: anywhere; }
+.bar { height: 6px; margin-top: 4px; border-radius: 0 4px 4px 0; background: var(--series-1); min-width: 2px; }
+.sub { color: var(--text-muted); font-size: 12px; }
+.empty { color: var(--text-muted); padding: 12px 0; }
+.error { color: var(--text-primary); border: 1px solid var(--text-secondary); padding: 8px 12px; border-radius: 6px; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Fleet agents</h1>
+    <div class="ranges" id="ranges" role="group" aria-label="Time range"></div>
+  </header>
+  <div id="error" hidden class="error"></div>
+  <section class="tiles" id="tiles" aria-label="Main indicators"></section>
+  <section class="panel">
+    <h2>Tokens per day</h2>
+    <p class="note" id="trend-note"></p>
+    <div class="legend" id="legend"></div>
+    <div class="chart" id="trend"></div>
+  </section>
+  <div class="columns">
+    <section class="panel">
+      <h2>Biggest blockers</h2>
+      <p class="note">Commands and tools by total time, plus permission waits and API errors. Commands are grouped by their first two words.</p>
+      <div class="scroll" id="blockers"></div>
+    </section>
+    <section class="panel">
+      <h2>Spending by project</h2>
+      <p class="note">Bars show tokens, which cover both agents. Dollars are Claude's API-equivalent estimate, not subscription cost; Codex reports none.</p>
+      <div class="scroll" id="projects"></div>
+    </section>
+  </div>
+  <section class="panel">
+    <h2>Biggest tasks</h2>
+    <p class="note">One session is one task, titled by its first prompt.</p>
+    <div class="scroll" id="tasks"></div>
+  </section>
+</main>
+<script>
+const RANGES = [7, 14, 30];
+let days = Number(new URLSearchParams(location.search).get("days")) || 7;
+
+const compact = new Intl.NumberFormat("en", { notation: "compact", maximumFractionDigits: 1 });
+const formatCount = (value) => compact.format(value ?? 0);
+const formatUsd = (value) => value == null ? "–" : value < 10 ? `$${value.toFixed(2)}` : `$${compact.format(value)}`;
+const formatMinutes = (value) => {
+  const minutes = value ?? 0;
+  if (minutes < 1) return `${Math.round(minutes * 60)} s`;
+  return minutes >= 60 ? `${(minutes / 60).toFixed(1)} h` : `${minutes.toFixed(1)} min`;
+};
+const formatPercent = (value) => value == null ? "–" : `${(value * 100).toFixed(1)}%`;
+const failureRatio = (row) => row && row.tool_calls ? row.tool_failures / row.tool_calls : null;
+
+function element(tag, properties = {}, ...children) {
+  const node = Object.assign(document.createElement(tag), properties);
+  node.append(...children);
+  return node;
+}
+
+async function report(name) {
+  const response = await fetch(`/api/${name}?days=${days}`);
+  if (!response.ok) throw new Error(`${name}: ${await response.text()}`);
+  return response.json();
+}
+
+function deltaText(current, previous, unit) {
+  if (current == null || previous == null) return "no earlier period to compare";
+  const difference = current - previous;
+  const arrow = difference > 0 ? "▲" : difference < 0 ? "▼" : "■";
+  if (unit === "points") return `${arrow} ${Math.abs(difference * 100).toFixed(1)} pts vs previous`;
+  if (previous === 0) return `${arrow} from 0 vs previous`;
+  return `${arrow} ${Math.abs((difference / previous) * 100).toFixed(0)}% vs previous`;
+}
+
+function renderTiles(rows) {
+  const current = rows.find((row) => row.period === "current") ?? {};
+  const previous = rows.find((row) => row.period === "previous");
+  const tiles = [
+    ["Tokens", formatCount(current.total_tokens), current.total_tokens, previous?.total_tokens],
+    ["API-equivalent spend", formatUsd(current.api_usd), current.api_usd, previous?.api_usd],
+    ["Tasks", formatCount(current.sessions), current.sessions, previous?.sessions],
+    ["Cache hit rate", formatPercent(current.cache_hit_ratio), current.cache_hit_ratio, previous?.cache_hit_ratio, "points"],
+    ["Tool failure rate", formatPercent(failureRatio(current)), failureRatio(current), failureRatio(previous), "points"],
+    ["Time in tools", formatMinutes(current.tool_minutes), current.tool_minutes, previous?.tool_minutes],
+    ["Waiting on you", formatMinutes(current.permission_minutes), current.permission_minutes, previous?.permission_minutes],
+  ];
+  document.getElementById("tiles").replaceChildren(...tiles.map(([label, value, now, before, unit]) =>
+    element("div", { className: "tile" },
+      element("div", { className: "label", textContent: label }),
+      element("div", { className: "value", textContent: value }),
+      element("div", { className: "delta", textContent: deltaText(now, before, unit) }))));
+}
+
+function dayList(count, endOffset) {
+  return Array.from({ length: count }, (_, index) => {
+    const date = new Date();
+    date.setDate(date.getDate() - endOffset - (count - 1 - index));
+    const pad = (value) => String(value).padStart(2, "0");
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+  });
+}
+
+function svgNode(tag, attributes) {
+  const node = document.createElementNS("http://www.w3.org/2000/svg", tag);
+  Object.entries(attributes).forEach(([name, value]) => node.setAttribute(name, value));
+  return node;
+}
+
+function renderTrend(rows) {
+  const byDay = new Map(rows.map((row) => [row.day, row.total_tokens]));
+  const currentDays = dayList(days, 0);
+  const previousDays = dayList(days, days);
+  const current = currentDays.map((day) => byDay.get(day) ?? 0);
+  const previous = previousDays.map((day) => byDay.get(day) ?? 0);
+  const peak = Math.max(1, ...current, ...previous);
+
+  document.getElementById("trend-note").textContent = `Last ${days} days against the ${days} before, aligned by day.`;
+  document.getElementById("legend").replaceChildren(
+    element("span", {}, element("i", { style: "border-color: var(--series-1)" }), `Last ${days} days`),
+    element("span", {}, element("i", { style: "border-color: var(--series-previous); border-top-style: dashed" }), `Previous ${days} days`));
+
+  const chart = document.getElementById("trend");
+  const width = Math.max(300, chart.clientWidth), height = 240, left = 52, right = 12, top = 10, bottom = 26;
+  const x = (index) => left + (index * (width - left - right)) / Math.max(1, days - 1);
+  const y = (value) => top + (1 - value / peak) * (height - top - bottom);
+  const svg = svgNode("svg", { viewBox: `0 0 ${width} ${height}`, role: "img", "aria-label": "Tokens per day compared with the previous period" });
+
+  [0, 0.5, 1].forEach((share) => {
+    const value = peak * share;
+    svg.append(svgNode("line", { x1: left, x2: width - right, y1: y(value), y2: y(value), stroke: "var(--grid)" }));
+    const label = svgNode("text", { x: left - 8, y: y(value) + 4, "text-anchor": "end", "font-size": 12, fill: "var(--text-muted)" });
+    label.textContent = formatCount(value);
+    svg.append(label);
+  });
+  const step = Math.ceil(days / Math.max(3, Math.floor(width / 110)));
+  currentDays.forEach((day, index) => {
+    if (index % step) return;
+    const label = svgNode("text", { x: x(index), y: height - 8, "text-anchor": "middle", "font-size": 12, fill: "var(--text-muted)" });
+    label.textContent = day.slice(5);
+    svg.append(label);
+  });
+
+  const points = (values) => values.map((value, index) => `${x(index)},${y(value)}`).join(" ");
+  svg.append(svgNode("polyline", { points: points(previous), fill: "none", stroke: "var(--series-previous)", "stroke-width": 2, "stroke-dasharray": "5 4", "stroke-linejoin": "round" }));
+  svg.append(svgNode("polyline", { points: points(current), fill: "none", stroke: "var(--series-1)", "stroke-width": 2, "stroke-linejoin": "round" }));
+  const crosshair = svgNode("line", { y1: top, y2: height - bottom, stroke: "var(--text-muted)", visibility: "hidden" });
+  const marker = svgNode("circle", { r: 4, fill: "var(--series-1)", stroke: "var(--surface-1)", "stroke-width": 2, visibility: "hidden" });
+  svg.append(crosshair, marker);
+
+  const tooltip = element("div", { className: "tooltip", hidden: true });
+  chart.replaceChildren(svg, tooltip);
+
+  svg.addEventListener("pointermove", (event) => {
+    const bounds = svg.getBoundingClientRect();
+    const position = ((event.clientX - bounds.left) / bounds.width) * width;
+    const index = Math.max(0, Math.min(days - 1, Math.round(((position - left) / (width - left - right)) * (days - 1))));
+    crosshair.setAttribute("x1", x(index));
+    crosshair.setAttribute("x2", x(index));
+    crosshair.setAttribute("visibility", "visible");
+    marker.setAttribute("cx", x(index));
+    marker.setAttribute("cy", y(current[index]));
+    marker.setAttribute("visibility", "visible");
+    tooltip.hidden = false;
+    tooltip.textContent = `${currentDays[index]}: ${formatCount(current[index])} · ${previousDays[index]}: ${formatCount(previous[index])}`;
+    const pixel = (x(index) / width) * bounds.width;
+    tooltip.style.left = `${Math.min(pixel + 8, bounds.width - tooltip.offsetWidth)}px`;
+    tooltip.style.top = "4px";
+  });
+  svg.addEventListener("pointerleave", () => {
+    crosshair.setAttribute("visibility", "hidden");
+    marker.setAttribute("visibility", "hidden");
+    tooltip.hidden = true;
+  });
+}
+
+function renderTable(targetId, columns, rows, emptyMessage) {
+  const target = document.getElementById(targetId);
+  if (!rows.length) {
+    target.replaceChildren(element("div", { className: "empty", textContent: emptyMessage }));
+    return;
+  }
+  const head = element("tr", {}, ...columns.map((column) =>
+    element("th", { textContent: column.title, className: column.number ? "number" : "" })));
+  const body = rows.map((row) => element("tr", {}, ...columns.map((column) => {
+    const cell = element("td", { className: column.number ? "number" : column.wide ? "wide" : "" });
+    cell.append(column.render(row));
+    return cell;
+  })));
+  target.replaceChildren(element("table", {}, element("thead", {}, head), element("tbody", {}, ...body)));
+}
+
+function labelWithBar(text, sub, share) {
+  const wrapper = element("div", {}, element("div", { textContent: text }));
+  if (sub) wrapper.append(element("div", { className: "sub", textContent: sub }));
+  wrapper.append(element("div", { className: "bar", style: `width: ${Math.max(share * 100, 1)}%` }));
+  return wrapper;
+}
+
+const KIND_LABELS = { command: "command", tool: "tool", permission: "permission wait", api_error: "API error" };
+
+function renderBlockers(rows) {
+  const peak = Math.max(0.01, ...rows.map((row) => row.minutes));
+  renderTable("blockers", [
+    { title: "Blocker", wide: true, render: (row) => labelWithBar(row.name || "unknown", KIND_LABELS[row.kind], row.minutes / peak) },
+    { title: "Total", number: true, render: (row) => formatMinutes(row.minutes) },
+    { title: "Longest", number: true, render: (row) => `${row.longest_seconds} s` },
+    { title: "Runs", number: true, render: (row) => formatCount(row.events) },
+    { title: "Failed", number: true, render: (row) => formatCount(row.failures) },
+  ], rows, "Nothing recorded in this period.");
+}
+
+function renderProjects(rows) {
+  const peak = Math.max(1, ...rows.map((row) => row.tokens));
+  renderTable("projects", [
+    { title: "Project", wide: true, render: (row) => labelWithBar(row.project, `${formatCount(row.sessions)} tasks`, row.tokens / peak) },
+    { title: "Tokens", number: true, render: (row) => formatCount(row.tokens) },
+    { title: "Change", number: true, render: (row) => row.previous_tokens ? deltaText(row.tokens, row.previous_tokens).replace(" vs previous", "") : "new" },
+    { title: "API $", number: true, render: (row) => formatUsd(row.api_usd) },
+    { title: "Tool time", number: true, render: (row) => formatMinutes(row.tool_minutes) },
+  ], rows, "No project activity in this period.");
+}
+
+function renderTasks(rows) {
+  renderTable("tasks", [
+    { title: "Task", wide: true, render: (row) => element("div", {},
+        element("div", { textContent: row.task || "untitled" }),
+        element("div", { className: "sub", textContent: `${row.project}${row.branch ? ` · ${row.branch}` : ""} · ${row.agent} on ${row.host || "unknown host"} · ${row.started_at}` })) },
+    { title: "Tokens", number: true, render: (row) => formatCount(row.tokens) },
+    { title: "API $", number: true, render: (row) => formatUsd(row.api_usd) },
+    { title: "Duration", number: true, render: (row) => `${row.minutes} min` },
+    { title: "Tool time", number: true, render: (row) => formatMinutes(row.tool_minutes) },
+    { title: "Failed tools", number: true, render: (row) => formatCount(row.tool_failures) },
+  ], rows, "No tasks in this period.");
+}
+
+function renderRanges() {
+  document.getElementById("ranges").replaceChildren(...RANGES.map((range) => {
+    const button = element("button", { textContent: `${range} days` });
+    button.setAttribute("aria-pressed", String(range === days));
+    button.addEventListener("click", () => {
+      days = range;
+      history.replaceState(null, "", `?days=${range}`);
+      refresh();
+    });
+    return button;
+  }));
+}
+
+async function refresh() {
+  renderRanges();
+  const banner = document.getElementById("error");
+  try {
+    const [kpis, trend, blockers, projects, tasks] = await Promise.all(
+      ["kpis", "trend", "blockers", "projects", "tasks"].map(report));
+    renderTiles(kpis);
+    renderTrend(trend);
+    renderBlockers(blockers);
+    renderProjects(projects);
+    renderTasks(tasks);
+    banner.hidden = true;
+  } catch (error) {
+    banner.textContent = `Could not load data: ${error.message}`;
+    banner.hidden = false;
+  }
+}
+
+refresh();
+setInterval(refresh, 60000);
+</script>
+</body>
+</html>

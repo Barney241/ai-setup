@@ -11,6 +11,8 @@
     {
       homeManagerModules.default = ./nix/module.nix;
 
+      nixosModules.telemetry = ./nix/telemetry-server.nix;
+
       packages = forAllSystems (pkgs: {
         default = pkgs.callPackage ./nix/package.nix { };
       });

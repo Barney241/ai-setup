@@ -11,7 +11,8 @@
     "SessionStart": [
       {
         "hooks": [
-          { "type": "command", "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/load-project-direnv.sh\"", "timeout": 300 }
+          { "type": "command", "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/load-project-direnv.sh\"", "timeout": 300 },
+          { "type": "command", "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/session-context.sh\"", "timeout": 10 }
         ]
       }
     ]

@@ -3,6 +3,10 @@
     "playwright": {
       "command": "playwright-mcp",
       "args": ["--headless"]
+    },
+    "ai-setup-telemetry": {
+      "command": "ai-setup",
+      "args": ["telemetry-mcp"]
     }
   }
 }

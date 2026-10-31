@@ -14,6 +14,9 @@ let
     AI_SETUP_REPO = cfg.repo;
     AI_SETUP_BRANCH = cfg.branch;
     AI_SETUP_FLEET = lib.concatStringsSep " " cfg.fleet;
+    AI_SETUP_TELEMETRY_ENDPOINT = lib.optionalString (cfg.telemetry.endpoint != null) cfg.telemetry.endpoint;
+    AI_SETUP_TELEMETRY_QUERY_URL = lib.optionalString (cfg.telemetry.queryUrl != null) cfg.telemetry.queryUrl;
+    AI_SETUP_TELEMETRY_CONTENT = lib.boolToString cfg.telemetry.content;
   };
 
   playwrightEnv = lib.optionalAttrs cfg.playwright.enable {
@@ -78,6 +81,28 @@ in
       type = lib.types.bool;
       default = true;
       description = "Install the Playwright CLI and MCP server with a Nix Chromium that runs on NixOS.";
+    };
+
+    telemetry = {
+      endpoint = lib.mkOption {
+        type = lib.types.nullOr lib.types.str;
+        default = null;
+        example = "http://100.64.0.1:4318";
+        description = "OTLP/HTTP base URL. `ai-setup sync` points Claude Code and Codex at it. Null turns export off.";
+      };
+
+      queryUrl = lib.mkOption {
+        type = lib.types.nullOr lib.types.str;
+        default = null;
+        example = "http://100.64.0.1:8123";
+        description = "ClickHouse HTTP URL behind `ai-setup query`, `ai-setup report` and the telemetry MCP server.";
+      };
+
+      content = lib.mkOption {
+        type = lib.types.bool;
+        default = false;
+        description = "Also export prompts, responses and tool input and output. They can contain secrets and client code.";
+      };
     };
   };
 

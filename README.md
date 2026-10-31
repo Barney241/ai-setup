@@ -28,6 +28,7 @@ sentence: "modernize #123, sol loop, full stop".
 | `modernize` | "modernize" | Rebases an old PR and decides whether it should still exist. |
 | `cut-release` | "cut a release" | Version, gates that mirror prod, tag, notes, deploy, health checks. |
 | `retro` | "retro" | Why did the agent do that? A better next prompt, and a patch to the skill. |
+| `fleet-analytics` | "fleet analytics", "how much did I use" | Answers usage questions from the fleet telemetry store. |
 | `harness-guards` | (automatic) | What to do when the sandbox, a worktree guard or dcg rejects a command. |
 | `agent-report` | (automatic) | Coverage block for investigation subagents. |
 | `leaving-pr-comments` | (automatic) | Format for comments an agent posts on my behalf. |
@@ -36,8 +37,8 @@ Subagent: `ci-digest` (Haiku) reads one failed CI log and returns only the
 failures.
 
 Plugin `ai-setup` (Claude Code): a secret-file guard, per-project direnv
-loading in worktrees, and a headless Playwright MCP server with a Nix
-Chromium.
+loading in worktrees, a headless Playwright MCP server with a Nix Chromium,
+and the telemetry MCP server.
 
 [`global/AGENTS.md`](global/AGENTS.md) holds the rules every agent on every
 host follows, including the model roster. Claude imports it from
@@ -63,7 +64,76 @@ skills live alongside. A new skill reaches every host without a rebuild.
 | `ai-setup setup` | once per host: sync, then sign in to gh (plus git credentials), Claude, Codex and Antigravity if needed, check fleet SSH and T3's Antigravity provider, run `doctor` |
 | `ai-setup sync` | clone, fast-forward, relink, refresh the plugin and the Codex MCP entry |
 | `ai-setup push [msg]` | commit, rebase, push, sync every other host now |
-| `ai-setup status` / `doctor` | checkout state and last sync / tools, auth, links |
+| `ai-setup status` / `doctor` | checkout state and last sync / tools, auth, links, telemetry |
+| `ai-setup report [name] [days]` | run a telemetry report, or list them |
+| `ai-setup query <sql>` | read-only SQL against the telemetry store |
+
+## Telemetry
+
+Claude Code, Codex and T3 Code export OpenTelemetry to one ClickHouse, so usage
+across every host can be queried in one place. No proxy sits in front of the
+providers and sign-in does not change.
+
+```
+Claude Code ─┐
+Codex ───────┼─ OTLP over the tailnet ─► otelcol-contrib ─► ClickHouse ─► ai.* views
+T3 Code ─────┘                           redacts, drops noise             ├─ ai-setup report / query
+                                                                          ├─ ai-setup-telemetry MCP
+                                                                          ├─ fleet-analytics skill
+                                                                          └─ web dashboard
+```
+
+The dashboard runs on the server at `http://<address>:8125`, for any device on
+the tailnet: this period against the last, tokens per day, biggest blockers,
+spending by project and the biggest tasks. It runs the same SQL as
+`ai-setup report`, so the numbers match what agents see.
+
+Claude Code telemetry has no project field. A session-start hook in the plugin
+sends the repo and branch, reading the endpoint from `~/.claude/settings.json`
+because Claude does not pass `OTEL_*` variables to hooks. Codex projects come
+from `workdir` in its tool calls.
+
+Server, in the NixOS config of one always-on host:
+
+```nix
+imports = [ inputs.ai-setup.nixosModules.telemetry ];
+services.ai-setup-telemetry = {
+  enable = true;
+  address = "100.64.0.1";
+  readers = [ "100.64.0.1" "100.64.0.2" ];
+};
+```
+
+It binds only to loopback and `address`, so it does not rely on the firewall.
+Anyone on the tailnet can send telemetry and open the dashboard, which shows
+task titles; only `readers` can run SQL, as the read-only `agent` user. ClickHouse's own `default` user stays on loopback.
+
+Clients, in home-manager:
+
+```nix
+programs.ai-setup.telemetry = {
+  endpoint = "http://100.64.0.1:4318";
+  queryUrl = "http://100.64.0.1:8123";
+  content = true;
+};
+```
+
+`ai-setup sync` writes the `env` keys into `~/.claude/settings.json` and a
+marked `[otel]` block into `~/.codex/config.toml`, and removes both when
+`endpoint` is null. It leaves a Codex `[otel]` table of your own alone. Point
+T3 Code at the same endpoint with `T3CODE_OTLP_TRACES_URL` and
+`T3CODE_OTLP_METRICS_URL` in the environment of its server. Its data stays in
+the raw `otel.*` tables; the `ai.*` views cover Claude Code and Codex.
+
+`content = true` also stores prompts, responses and tool input and output. The
+collector masks common token formats before they are stored, but that is best
+effort, so treat the database as sensitive.
+
+Raw data stays in `otel.*`, as written by the collector. The `ai.*` views give
+it typed columns and one shape across agents, and because they are views a
+schema change applies to history too. See
+[`telemetry/schema.sql`](telemetry/schema.sql) and
+[`telemetry/reports`](telemetry/reports).
 
 ## Install
 

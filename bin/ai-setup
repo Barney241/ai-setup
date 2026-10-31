@@ -5,10 +5,31 @@ AI_SETUP_DIR="${AI_SETUP_DIR:-$HOME/Projects/personal/ai-setup}"
 AI_SETUP_REPO="${AI_SETUP_REPO:-https://github.com/Barney241/ai-setup.git}"
 AI_SETUP_BRANCH="${AI_SETUP_BRANCH:-main}"
 AI_SETUP_FLEET="${AI_SETUP_FLEET:-}"
+AI_SETUP_TELEMETRY_ENDPOINT="${AI_SETUP_TELEMETRY_ENDPOINT:-}"
+AI_SETUP_TELEMETRY_QUERY_URL="${AI_SETUP_TELEMETRY_QUERY_URL:-}"
+AI_SETUP_TELEMETRY_CONTENT="${AI_SETUP_TELEMETRY_CONTENT:-false}"
 STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/ai-setup"
 SKILL_TARGETS=("$HOME/.claude/skills" "$HOME/.agents/skills")
 AGENT_TARGET="$HOME/.claude/agents"
 GLOBAL_RULES="$AI_SETUP_DIR/global/AGENTS.md"
+CLAUDE_SETTINGS="$HOME/.claude/settings.json"
+CODEX_CONFIG="$HOME/.codex/config.toml"
+CODEX_TELEMETRY_BEGIN="# ai-setup telemetry begin"
+CODEX_TELEMETRY_END="# ai-setup telemetry end"
+CLAUDE_TELEMETRY_KEYS=(
+  CLAUDE_CODE_ENABLE_TELEMETRY
+  CLAUDE_CODE_ENHANCED_TELEMETRY_BETA
+  OTEL_METRICS_EXPORTER
+  OTEL_LOGS_EXPORTER
+  OTEL_TRACES_EXPORTER
+  OTEL_EXPORTER_OTLP_PROTOCOL
+  OTEL_EXPORTER_OTLP_ENDPOINT
+  OTEL_RESOURCE_ATTRIBUTES
+  OTEL_LOG_TOOL_DETAILS
+  OTEL_LOG_USER_PROMPTS
+  OTEL_LOG_ASSISTANT_RESPONSES
+  OTEL_LOG_TOOL_CONTENT
+)
 
 say() { printf 'ai-setup: %s\n' "$*"; }
 warn() { printf 'ai-setup: warning: %s\n' "$*" >&2; }
@@ -25,12 +46,15 @@ usage: ai-setup <command>
   link            relink skills, agents and global rules from the checkout (no network)
   push [message]  commit local edits, rebase on origin, push, then sync the fleet
   fleet           trigger a sync on every other host in AI_SETUP_FLEET
+  query <sql>     run read-only SQL against the fleet telemetry store
+  report [name] [days]  run a telemetry report, or list them
   status          checkout state, last sync, linked skills
   doctor          check tools, auth and links on this host
   path            print the checkout path
 
 checkout: $AI_SETUP_DIR
 fleet:    ${AI_SETUP_FLEET:-<none>}
+telemetry: ${AI_SETUP_TELEMETRY_ENDPOINT:-<off>}
 EOF
 }
 
@@ -184,15 +208,152 @@ refresh_claude_plugin() {
 }
 
 register_codex_mcp() {
-  has codex && has playwright-mcp || return 0
-  codex mcp get playwright >/dev/null 2>&1 && return 0
-  codex mcp add playwright -- playwright-mcp --headless >/dev/null && say "registered playwright MCP for codex"
+  has codex || return 0
+  if has playwright-mcp && ! codex mcp get playwright >/dev/null 2>&1; then
+    codex mcp add playwright -- playwright-mcp --headless >/dev/null && say "registered playwright MCP for codex"
+  fi
+  if [ -n "$AI_SETUP_TELEMETRY_QUERY_URL" ] && ! codex mcp get ai-setup-telemetry >/dev/null 2>&1; then
+    codex mcp add ai-setup-telemetry -- ai-setup telemetry-mcp >/dev/null && say "registered telemetry MCP for codex"
+  fi
+  return 0
 }
 
 register_antigravity_mcp() {
-  has agy && has playwright-mcp || return 0
-  agy mcp list 2>/dev/null | grep -q 'playwright' && return 0
-  agy mcp add playwright playwright-mcp --headless >/dev/null 2>&1 && say "registered playwright MCP for antigravity"
+  has agy || return 0
+  local registered
+  registered="$(agy mcp list 2>/dev/null || true)"
+  if has playwright-mcp && ! grep -q 'playwright' <<<"$registered"; then
+    agy mcp add playwright playwright-mcp --headless >/dev/null 2>&1 && say "registered playwright MCP for antigravity"
+  fi
+  if [ -n "$AI_SETUP_TELEMETRY_QUERY_URL" ] && ! grep -q 'ai-setup-telemetry' <<<"$registered"; then
+    agy mcp add ai-setup-telemetry ai-setup telemetry-mcp >/dev/null 2>&1 && say "registered telemetry MCP for antigravity"
+  fi
+  return 0
+}
+
+claude_telemetry_env() {
+  [ -n "$AI_SETUP_TELEMETRY_ENDPOINT" ] || { printf '{}'; return 0; }
+  jq -n \
+    --arg endpoint "$AI_SETUP_TELEMETRY_ENDPOINT" \
+    --arg resource "host.name=$(uname -n)" \
+    --argjson content "$AI_SETUP_TELEMETRY_CONTENT" '
+    {
+      CLAUDE_CODE_ENABLE_TELEMETRY: "1",
+      CLAUDE_CODE_ENHANCED_TELEMETRY_BETA: "1",
+      OTEL_METRICS_EXPORTER: "otlp",
+      OTEL_LOGS_EXPORTER: "otlp",
+      OTEL_TRACES_EXPORTER: "otlp",
+      OTEL_EXPORTER_OTLP_PROTOCOL: "http/protobuf",
+      OTEL_EXPORTER_OTLP_ENDPOINT: $endpoint,
+      OTEL_RESOURCE_ATTRIBUTES: $resource,
+      OTEL_LOG_TOOL_DETAILS: "1"
+    } + (if $content then {
+      OTEL_LOG_USER_PROMPTS: "1",
+      OTEL_LOG_ASSISTANT_RESPONSES: "1",
+      OTEL_LOG_TOOL_CONTENT: "1"
+    } else {} end)'
+}
+
+configure_claude_telemetry() {
+  local wanted managed updated
+  if [ -L "$CLAUDE_SETTINGS" ]; then
+    [ -z "$AI_SETUP_TELEMETRY_ENDPOINT" ] || warn "skipping $CLAUDE_SETTINGS: it is a symlink"
+    return 0
+  fi
+  if [ ! -f "$CLAUDE_SETTINGS" ]; then
+    [ -n "$AI_SETUP_TELEMETRY_ENDPOINT" ] || return 0
+    mkdir -p "$(dirname "$CLAUDE_SETTINGS")"
+    printf '{}\n' > "$CLAUDE_SETTINGS"
+  fi
+  wanted="$(claude_telemetry_env)"
+  managed="$(printf '%s\n' "${CLAUDE_TELEMETRY_KEYS[@]}" | jq -R . | jq -s .)"
+  updated="$(mktemp "$CLAUDE_SETTINGS.XXXXXX")"
+  if ! jq --argjson wanted "$wanted" --argjson managed "$managed" '
+    (.["env"] // {} | with_entries(select(.key as $key | $managed | index($key) | not))) as $kept
+    | .["env"] = $kept + $wanted
+    | if .["env"] == {} then del(.["env"]) else . end
+  ' "$CLAUDE_SETTINGS" > "$updated"; then
+    unlink "$updated"
+    warn "could not parse $CLAUDE_SETTINGS; telemetry not configured for Claude"
+    return 0
+  fi
+  if jq -e --slurpfile current "$CLAUDE_SETTINGS" '. == $current[0]' "$updated" >/dev/null; then
+    unlink "$updated"
+    return 0
+  fi
+  chmod --reference="$CLAUDE_SETTINGS" "$updated"
+  mv "$updated" "$CLAUDE_SETTINGS"
+  say "updated Claude telemetry settings"
+}
+
+codex_telemetry_block() {
+  local endpoint="$AI_SETUP_TELEMETRY_ENDPOINT"
+  cat <<EOF
+$CODEX_TELEMETRY_BEGIN
+[otel]
+environment = "$(uname -n)"
+log_user_prompt = $AI_SETUP_TELEMETRY_CONTENT
+exporter = { otlp-http = { endpoint = "$endpoint/v1/logs", protocol = "binary" } }
+trace_exporter = { otlp-http = { endpoint = "$endpoint/v1/traces", protocol = "binary" } }
+metrics_exporter = { otlp-http = { endpoint = "$endpoint/v1/metrics", protocol = "binary" } }
+$CODEX_TELEMETRY_END
+EOF
+}
+
+configure_codex_telemetry() {
+  local unmanaged updated
+  [ -f "$CODEX_CONFIG" ] || return 0
+  unmanaged="$(sed "/^$CODEX_TELEMETRY_BEGIN\$/,/^$CODEX_TELEMETRY_END\$/d" "$CODEX_CONFIG")"
+  if [ -n "$AI_SETUP_TELEMETRY_ENDPOINT" ] && grep -q '^\[otel\]' <<<"$unmanaged"; then
+    warn "skipping $CODEX_CONFIG: it already has its own [otel] table"
+    return 0
+  fi
+  updated="$(mktemp "$CODEX_CONFIG.XXXXXX")"
+  printf '%s\n' "$unmanaged" > "$updated"
+  if [ -n "$AI_SETUP_TELEMETRY_ENDPOINT" ]; then
+    { printf '\n'; codex_telemetry_block; } >> "$updated"
+  fi
+  if [ "$(sed '/^$/d' "$updated")" = "$(sed '/^$/d' "$CODEX_CONFIG")" ]; then
+    unlink "$updated"
+    return 0
+  fi
+  chmod --reference="$CODEX_CONFIG" "$updated"
+  mv "$updated" "$CODEX_CONFIG"
+  say "updated Codex telemetry settings"
+}
+
+telemetry_request() {
+  local sql="$1" params="${2:-}"
+  [ -n "$AI_SETUP_TELEMETRY_QUERY_URL" ] || die "telemetry is not configured on this host"
+  curl --silent --show-error --fail-with-body --max-time 70 \
+    "$AI_SETUP_TELEMETRY_QUERY_URL/?user=agent&default_format=TSVWithNames$params" \
+    --data-binary "$sql"
+}
+
+cmd_query() {
+  [ "$#" -eq 1 ] || die "usage: ai-setup query <sql>"
+  telemetry_request "$1"
+}
+
+list_reports() {
+  local report
+  for report in "$AI_SETUP_DIR"/telemetry/reports/*.sql; do
+    basename "$report" .sql
+  done
+}
+
+cmd_report() {
+  local name="${1:-}" days="${2:-7}" file
+  [ -n "$name" ] || { list_reports; return 0; }
+  case "$name" in *[!a-z-]*) die "unknown report: $name" ;; esac
+  file="$AI_SETUP_DIR/telemetry/reports/$name.sql"
+  [ -f "$file" ] || die "unknown report: $name"
+  case "$days" in '' | *[!0-9]*) die "days must be a number" ;; esac
+  telemetry_request "$(cat "$file")" "&param_days=$days"
+}
+
+cmd_telemetry_mcp() {
+  exec python3 "$AI_SETUP_DIR/telemetry/mcp_server.py"
 }
 
 record_sync() {
@@ -207,6 +368,8 @@ cmd_sync() {
   refresh_claude_plugin
   register_codex_mcp
   register_antigravity_mcp
+  configure_claude_telemetry
+  configure_codex_telemetry
   record_sync
 }
 
@@ -317,6 +480,7 @@ cmd_status() {
   printf 'skills     claude %s, agents %s\n' "$(count_links "$HOME/.claude/skills")" "$(count_links "$HOME/.agents/skills")"
   printf 'subagents  %s\n' "$(count_links "$AGENT_TARGET")"
   printf 'fleet      %s\n' "${AI_SETUP_FLEET:-<none>}"
+  printf 'telemetry  %s\n' "${AI_SETUP_TELEMETRY_ENDPOINT:-<off>}"
 }
 
 check() {
@@ -349,6 +513,12 @@ cmd_doctor() {
   if grep -qs 'hooks/load-project-direnv.sh' "$HOME/.claude/settings.json"; then
     printf '  WARN  ~/.claude/settings.json still runs load-project-direnv.sh; the ai-setup plugin runs it too\n'
   fi
+  [ -n "$AI_SETUP_TELEMETRY_ENDPOINT" ] || return 0
+  printf 'telemetry\n'
+  check "claude export configured" grep -qF "$AI_SETUP_TELEMETRY_ENDPOINT" "$CLAUDE_SETTINGS"
+  check "codex export configured" grep -qxF "$CODEX_TELEMETRY_BEGIN" "$CODEX_CONFIG"
+  check "ingest reachable" curl --silent --output /dev/null --max-time 5 "$AI_SETUP_TELEMETRY_ENDPOINT/v1/logs"
+  check "store reachable" telemetry_request 'SELECT 1'
 }
 
 main() {
@@ -360,6 +530,9 @@ main() {
     link) cmd_link ;;
     push) cmd_push "$@" ;;
     fleet) cmd_fleet ;;
+    query) cmd_query "$@" ;;
+    report) cmd_report "$@" ;;
+    telemetry-mcp) cmd_telemetry_mcp ;;
     status) cmd_status ;;
     doctor) cmd_doctor ;;
     path) printf '%s\n' "$AI_SETUP_DIR" ;;
