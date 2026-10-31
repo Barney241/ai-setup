@@ -53,7 +53,7 @@ in
     dashboardPort = lib.mkOption {
       type = lib.types.port;
       default = 8125;
-      description = "Port of the web dashboard. It listens on all interfaces, so restrict it with the firewall if the LAN is not trusted.";
+      description = "Port of the web dashboard. It listens on all interfaces; the firewall opens it on the tailnet only.";
     };
 
     readers = lib.mkOption {
@@ -71,6 +71,12 @@ in
   };
 
   config = lib.mkIf cfg.enable {
+    networking.firewall.interfaces.tailscale0.allowedTCPPorts = [
+      cfg.otlpPort
+      cfg.httpPort
+      cfg.dashboardPort
+    ];
+
     services.clickhouse = {
       enable = true;
       serverConfig = {
@@ -130,6 +136,7 @@ in
           filter = {
             traces.span = [
               "IsMatch(name, \"^(fs[.]|append_items|persist_rollout_items|receiving|handle_responses)\")"
+              "resource.attributes[\"service.name\"] == \"t3code-server\""
             ];
           };
           transform = {

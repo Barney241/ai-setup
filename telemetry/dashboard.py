@@ -8,9 +8,13 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 HERE = Path(__file__).parent
-REPORTS = {path.stem: path.read_text() for path in (HERE / "reports").glob("*.sql")}
+SCOPE = (HERE / "scope.sql").read_text()
+PANELS = {path.stem: SCOPE + path.read_text() for path in (HERE / "panels").glob("*.sql")}
 PAGE = (HERE / "dashboard.html").read_bytes()
 ALLOWED_DAYS = {"7", "14", "30"}
+TEXT_FILTERS = ("project", "host", "agent", "session", "kind", "name")
+MAX_FILTER_LENGTH = 300
+MAX_CACHE_ENTRIES = 1000
 CACHE_SECONDS = 30
 
 listen_addresses = os.environ["DASHBOARD_ADDRESSES"].split()
@@ -19,8 +23,8 @@ clickhouse_url = os.environ["DASHBOARD_CLICKHOUSE_URL"]
 cache = {}
 
 
-def run_report(name, days):
-    key = (name, days)
+def run_panel(name, filters):
+    key = (name, tuple(sorted(filters.items())))
     cached = cache.get(key)
     if cached and time.monotonic() - cached[0] < CACHE_SECONDS:
         return cached[1]
@@ -29,15 +33,29 @@ def run_report(name, days):
             "user": "agent",
             "default_format": "JSON",
             "output_format_json_quote_64bit_integers": 0,
-            "param_days": days,
+            **{f"param_{field}": value for field, value in filters.items()},
         }
     )
-    request = urllib.request.Request(f"{clickhouse_url}/?{params}", data=REPORTS[name].encode())
+    request = urllib.request.Request(f"{clickhouse_url}/?{params}", data=PANELS[name].encode())
     with urllib.request.urlopen(request, timeout=30) as response:
         rows = json.load(response)["data"]
     body = json.dumps(rows).encode()
+    if len(cache) >= MAX_CACHE_ENTRIES:
+        cache.clear()
     cache[key] = (time.monotonic(), body)
     return body
+
+
+def parse_filters(query):
+    values = urllib.parse.parse_qs(query)
+    filters = {field: values.get(field, [""])[0] for field in TEXT_FILTERS}
+    filters["days"] = values.get("days", ["7"])[0]
+    return filters
+
+
+def filters_are_valid(filters):
+    within_length = all(len(filters[field]) <= MAX_FILTER_LENGTH for field in TEXT_FILTERS)
+    return filters["days"] in ALLOWED_DAYS and within_length
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -47,12 +65,12 @@ class Handler(BaseHTTPRequestHandler):
             self.respond(200, "text/html; charset=utf-8", PAGE)
             return
         name = url.path.removeprefix("/api/")
-        days = urllib.parse.parse_qs(url.query).get("days", ["7"])[0]
-        if name not in REPORTS or days not in ALLOWED_DAYS:
+        filters = parse_filters(url.query)
+        if name not in PANELS or not filters_are_valid(filters):
             self.respond(404, "text/plain", b"not found")
             return
         try:
-            self.respond(200, "application/json", run_report(name, days))
+            self.respond(200, "application/json", run_panel(name, filters))
         except OSError as error:
             self.respond(502, "text/plain", str(error).encode())
 

@@ -8,94 +8,247 @@
 <style>
 :root {
   color-scheme: dark;
-  --surface-0: #111110;
-  --surface-1: #1a1a19;
-  --text-primary: #f0efec;
-  --text-secondary: #c3c2b7;
-  --text-muted: #9c9b92;
-  --grid: #2f2f2c;
-  --series-1: #3987e5;
-  --series-previous: #77766f;
+  --page: #111113;
+  --surface: #18191b;
+  --surface-raised: #212225;
+  --surface-hover: #272a2d;
+  --line: #2e3135;
+  --line-strong: #43484e;
+  --text-primary: #edeef0;
+  --text-secondary: #b0b4ba;
+  --text-muted: #8b8d98;
+  --accent: #70b8ff;
+  --series-claude: #3987e5;
+  --series-codex: #d95926;
+  --series-previous: #696e77;
+  --time-model: #199e70;
+  --time-tools: #c98500;
+  --time-wait: #9085e9;
+  --status-good: #71d083;
+  --status-watch: #ffca16;
+  --status-poor: #ff9592;
 }
 * { box-sizing: border-box; }
-body { margin: 0; background: var(--surface-0); color: var(--text-primary); font: 14px/1.45 system-ui, sans-serif; }
-main { max-width: 1240px; margin: 0 auto; padding: 24px 20px 48px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; }
-header { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; }
-h1 { font-size: 20px; margin: 0; }
-h2 { font-size: 14px; margin: 0 0 2px; }
-.note { color: var(--text-muted); font-size: 12px; margin: 0 0 12px; }
-.ranges { display: flex; gap: 4px; }
-.ranges button { font: inherit; padding: 4px 12px; min-height: 32px; border: 1px solid var(--grid); border-radius: 6px; background: var(--surface-1); color: var(--text-secondary); cursor: pointer; }
-.ranges button[aria-pressed="true"] { color: var(--text-primary); border-color: var(--text-secondary); font-weight: 600; }
-.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; }
-.tile, .panel { background: var(--surface-1); border: 1px solid var(--grid); border-radius: 8px; padding: 14px 16px; min-width: 0; }
+body { margin: 0; background: var(--page); color: var(--text-primary); font: 14px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
+main { max-width: 1320px; margin: 0 auto; padding: 20px 20px 56px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; transition: opacity 120ms; }
+main.loading { opacity: 0.6; }
+header { display: flex; flex-wrap: wrap; gap: 4px 16px; align-items: baseline; justify-content: space-between; }
+h1 { font-size: 18px; font-weight: 600; margin: 0; }
+h2 { font-size: 14px; font-weight: 600; margin: 0; }
+h3 { font-size: 12px; font-weight: 500; color: var(--text-muted); margin: 0 0 8px; }
+button, select, input { font: inherit; color: inherit; }
+.muted { color: var(--text-muted); font-size: 12px; }
+.note { color: var(--text-muted); font-size: 12px; margin: 2px 0 12px; }
+.filters { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; position: sticky; top: 0; z-index: 2; background: var(--page); padding: 8px 0; }
+.segmented { display: inline-flex; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
+.segmented button { border: 0; background: var(--surface); color: var(--text-secondary); padding: 0 12px; min-height: 32px; cursor: pointer; }
+.segmented button + button { border-left: 1px solid var(--line); }
+.segmented button:hover { background: var(--surface-hover); }
+.segmented button[aria-pressed="true"] { background: var(--surface-raised); color: var(--text-primary); font-weight: 600; }
+select, input[type="search"] { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; min-height: 32px; padding: 0 8px; color: var(--text-secondary); max-width: 220px; }
+.ghost { background: none; border: 0; color: var(--accent); cursor: pointer; padding: 0 4px; min-height: 32px; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.banner { border: 1px solid var(--line-strong); background: var(--surface); padding: 8px 12px; border-radius: 6px; color: var(--text-secondary); font-size: 13px; }
+.group { display: grid; gap: 8px; }
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 8px; }
+.tile, .panel { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; min-width: 0; }
+.tile { padding: 12px 14px; display: grid; gap: 2px; align-content: start; }
+.tile .top { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
 .tile .label { color: var(--text-secondary); font-size: 12px; }
-.tile .value { font-size: 26px; font-weight: 600; margin: 2px 0; font-variant-numeric: tabular-nums; }
-.tile .delta { color: var(--text-secondary); font-size: 12px; font-variant-numeric: tabular-nums; }
-.columns { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(420px, 100%), 1fr)); gap: 16px; min-width: 0; }
+.tile .value { font-size: 24px; font-weight: 600; }
+.tile .row { display: flex; justify-content: space-between; align-items: end; gap: 8px; min-height: 28px; }
+.tile .hint { color: var(--text-muted); font-size: 12px; margin-top: 4px; }
+.delta { font-size: 12px; color: var(--text-secondary); }
+.delta.better { color: var(--status-good); }
+.delta.worse { color: var(--status-poor); }
+.status { font-size: 12px; white-space: nowrap; color: var(--text-muted); }
+.status.good { color: var(--status-good); }
+.status.watch { color: var(--status-watch); }
+.status.poor { color: var(--status-poor); }
+.spark { width: 72px; height: 24px; flex: none; }
+.panel { padding: 14px 16px; }
+.panel-head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; align-items: start; }
+.columns { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(480px, 100%), 1fr)); gap: 16px; min-width: 0; }
 .chart { position: relative; }
-.chart svg { display: block; width: 100%; height: 240px; }
-.legend { display: flex; gap: 16px; color: var(--text-secondary); font-size: 12px; margin-bottom: 6px; }
-.legend i { display: inline-block; width: 14px; height: 0; border-top: 2px solid; margin-right: 6px; vertical-align: middle; }
-.tooltip { position: absolute; pointer-events: none; background: var(--surface-0); border: 1px solid var(--grid); border-radius: 6px; padding: 6px 8px; font-size: 12px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.chart svg { display: block; width: 100%; height: 260px; }
+.chart svg .band { fill: transparent; outline: none; }
+.chart svg .band:hover, .chart svg .band:focus { fill: rgba(255, 255, 255, 0.04); }
+.legend { display: flex; flex-wrap: wrap; gap: 4px 16px; color: var(--text-secondary); font-size: 12px; margin: 4px 0 8px; }
+.legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 6px; }
+.legend i.line { height: 0; width: 14px; border-top: 2px solid; border-radius: 0; vertical-align: middle; }
+.tooltip { position: absolute; pointer-events: none; background: var(--surface-raised); border: 1px solid var(--line-strong); border-radius: 6px; padding: 6px 8px; font-size: 12px; white-space: nowrap; font-variant-numeric: tabular-nums; z-index: 1; }
+.tooltip strong { font-weight: 600; }
+.tooltip i { display: inline-block; width: 10px; height: 0; border-top: 2px solid; margin-right: 6px; vertical-align: middle; }
+.segments { display: flex; gap: 2px; height: 28px; margin: 8px 0; }
+.segments div { border-radius: 4px; color: #fff; font-size: 12px; padding: 0 8px; display: flex; align-items: center; white-space: nowrap; min-width: 0; }
 .scroll { overflow-x: auto; }
 table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; }
-th { text-align: left; color: var(--text-muted); font-weight: 500; font-size: 12px; padding: 4px 8px 4px 0; border-bottom: 1px solid var(--grid); white-space: nowrap; }
-td { padding: 6px 8px 6px 0; border-bottom: 1px solid var(--grid); vertical-align: top; }
+th { text-align: left; color: var(--text-muted); font-weight: 500; font-size: 12px; padding: 4px 12px 4px 0; border-bottom: 1px solid var(--line); white-space: nowrap; }
+th button { background: none; border: 0; padding: 0; color: inherit; cursor: pointer; }
+th[aria-sort] button { color: var(--text-primary); }
+td { padding: 6px 12px 6px 0; border-bottom: 1px solid var(--line); vertical-align: top; }
 td.number, th.number { text-align: right; white-space: nowrap; }
-td.wide { min-width: 220px; overflow-wrap: anywhere; }
-.bar { height: 6px; margin-top: 4px; border-radius: 0 4px 4px 0; background: var(--series-1); min-width: 2px; }
-.sub { color: var(--text-muted); font-size: 12px; }
+td.wide { min-width: 240px; overflow-wrap: anywhere; }
+tr.clickable { cursor: pointer; }
+tr.clickable:hover td { background: var(--surface-hover); }
+.link { background: none; border: 0; padding: 0; color: var(--text-primary); text-align: left; cursor: pointer; overflow-wrap: anywhere; }
+.link:hover { color: var(--accent); }
+.bar { height: 4px; margin-top: 4px; border-radius: 0 2px 2px 0; background: var(--series-claude); min-width: 2px; }
 .empty { color: var(--text-muted); padding: 12px 0; }
-.error { color: var(--text-primary); border: 1px solid var(--text-secondary); padding: 8px 12px; border-radius: 6px; }
+details summary { color: var(--text-muted); font-size: 12px; cursor: pointer; margin-top: 8px; }
+dialog { background: var(--surface); color: var(--text-primary); border: 1px solid var(--line-strong); border-radius: 8px 0 0 8px; padding: 0; margin: 0 0 0 auto; height: 100dvh; max-height: 100dvh; width: min(860px, 100vw); max-width: 100vw; }
+dialog::backdrop { background: rgba(0, 0, 0, 0.55); }
+.drawer-head { position: sticky; top: 0; background: var(--surface); border-bottom: 1px solid var(--line); padding: 14px 16px; display: flex; justify-content: space-between; gap: 12px; align-items: start; z-index: 1; }
+.drawer-body { padding: 14px 16px; display: grid; gap: 14px; }
+.facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 8px; }
+.facts div { background: var(--surface-raised); border-radius: 6px; padding: 8px 10px; }
+.facts strong { display: block; font-size: 16px; font-weight: 600; }
+.step { display: grid; grid-template-columns: 62px 78px minmax(0, 1fr) 96px; gap: 8px; padding: 6px 0; border-bottom: 1px solid var(--line); font-size: 13px; }
+.step .time, .step .kind { color: var(--text-muted); font-size: 12px; }
+.step .text { color: var(--text-secondary); font-size: 12px; overflow-wrap: anywhere; white-space: pre-wrap; margin: 2px 0 0; font-family: ui-monospace, monospace; max-height: 7.5em; overflow-y: auto; }
+.step.prompt .text { color: var(--text-primary); font-family: inherit; font-size: 13px; }
+.step .amount { text-align: right; font-variant-numeric: tabular-nums; color: var(--text-secondary); font-size: 12px; }
+.step.failed .kind { color: var(--status-poor); }
+@media (max-width: 560px) { .step { grid-template-columns: 62px minmax(0, 1fr) 72px; } .step .kind { display: none; } }
 </style>
 </head>
 <body>
-<main>
+<main id="main">
   <header>
     <h1>Fleet agents</h1>
-    <div class="ranges" id="ranges" role="group" aria-label="Time range"></div>
+    <span class="muted" id="freshness"></span>
   </header>
-  <div id="error" hidden class="error"></div>
-  <section class="tiles" id="tiles" aria-label="Main indicators"></section>
+  <nav class="filters" aria-label="Filters">
+    <div class="segmented" id="ranges" role="group" aria-label="Time range"></div>
+    <select id="filter-project" aria-label="Project"></select>
+    <select id="filter-host" aria-label="Host"></select>
+    <select id="filter-agent" aria-label="Agent"></select>
+    <button class="ghost" id="clear" hidden>Clear filters</button>
+  </nav>
+  <div id="error" hidden class="banner" role="alert"></div>
+  <div id="coverage" hidden class="banner"></div>
+  <section class="group" aria-label="Cost and volume">
+    <h3>Cost and volume</h3>
+    <div class="tiles" id="tiles-cost"></div>
+  </section>
+  <section class="group" aria-label="Health">
+    <h3>Health. Targets are starting defaults, not industry standards</h3>
+    <div class="tiles" id="tiles-health"></div>
+  </section>
+  <section class="group" aria-label="Output and autonomy">
+    <h3>Output and autonomy</h3>
+    <div class="tiles" id="tiles-output"></div>
+  </section>
   <section class="panel">
-    <h2>Tokens per day</h2>
-    <p class="note" id="trend-note"></p>
+    <div class="panel-head">
+      <div>
+        <h2 id="trend-title"></h2>
+        <p class="note" id="trend-note"></p>
+      </div>
+      <div class="segmented" id="trend-metric" role="group" aria-label="Chart metric"></div>
+    </div>
     <div class="legend" id="legend"></div>
     <div class="chart" id="trend"></div>
+    <details><summary>Show as table</summary><div class="scroll" id="trend-table"></div></details>
+  </section>
+  <section class="panel">
+    <h2>Where the time went</h2>
+    <p class="note">Measured time inside model calls, tools and permission prompts. Claude reports all three; Codex reports tools only.</p>
+    <div class="segments" id="time-bar"></div>
+    <div class="legend" id="time-legend"></div>
   </section>
   <div class="columns">
     <section class="panel">
       <h2>Biggest blockers</h2>
-      <p class="note">Commands and tools by total time, plus permission waits and API errors. Commands are grouped by their first two words.</p>
+      <p class="note">Ranked by total time. Commands are grouped by their first two words. Click a row for each run.</p>
       <div class="scroll" id="blockers"></div>
     </section>
     <section class="panel">
       <h2>Spending by project</h2>
-      <p class="note">Bars show tokens, which cover both agents. Dollars are Claude's API-equivalent estimate, not subscription cost; Codex reports none.</p>
+      <p class="note">Dollars are Claude's API-equivalent estimate, not your subscription cost; Codex reports none. Click a project to filter.</p>
       <div class="scroll" id="projects"></div>
     </section>
   </div>
   <section class="panel">
-    <h2>Biggest tasks</h2>
-    <p class="note">One session is one task, titled by its first prompt.</p>
+    <div class="panel-head">
+      <div>
+        <h2>Tasks</h2>
+        <p class="note">One session is one task, titled by its first prompt. Click a task for its timeline.</p>
+      </div>
+      <input type="search" id="task-search" placeholder="Search tasks" aria-label="Search tasks">
+    </div>
     <div class="scroll" id="tasks"></div>
   </section>
+  <div class="columns">
+    <section class="panel">
+      <h2>Models</h2>
+      <p class="note">Cache hit is the share of input tokens read from cache. TTFT is the time to the first token.</p>
+      <div class="scroll" id="models"></div>
+    </section>
+    <section class="panel">
+      <h2>Fleet</h2>
+      <p class="note">Every host and agent, ignoring filters. T3 runs cover the selected days and include sessions that do not export telemetry.</p>
+      <div class="scroll" id="fleet"></div>
+      <div class="scroll" id="t3"></div>
+    </section>
+  </div>
 </main>
+<dialog id="drawer" aria-labelledby="drawer-title">
+  <div class="drawer-head">
+    <div>
+      <h2 id="drawer-title"></h2>
+      <div class="muted" id="drawer-subtitle"></div>
+    </div>
+    <button class="ghost" id="drawer-close">Close</button>
+  </div>
+  <div class="drawer-body" id="drawer-body"></div>
+</dialog>
 <script>
 const RANGES = [7, 14, 30];
-let days = Number(new URLSearchParams(location.search).get("days")) || 7;
+const MIN_SAMPLE = 20;
+const KIND_LABELS = { command: "command", tool: "tool", permission: "permission wait", api_error: "API error" };
+const STEP_LABELS = { prompt: "prompt", response: "reply", model: "model", tool: "tool", wait: "waiting", error: "API error" };
+const STATUS_LABELS = { good: "✓ Good", watch: "! Watch", poor: "✕ Poor" };
+const AGENT_SERIES = [["claude", "Claude", "var(--series-claude)"], ["codex", "Codex", "var(--series-codex)"]];
+const TREND_METRICS = {
+  tokens: { label: "Tokens", field: "tokens", format: formatCount },
+  usd: { label: "Spend", field: "api_usd", format: formatUsd },
+};
+
+const initial = new URLSearchParams(location.search);
+const state = {
+  days: RANGES.includes(Number(initial.get("days"))) ? Number(initial.get("days")) : 7,
+  project: initial.get("project") ?? "",
+  host: initial.get("host") ?? "",
+  agent: initial.get("agent") ?? "",
+  session: initial.get("session") ?? "",
+  trendMetric: "tokens",
+  taskSearch: "",
+};
+const tableSorts = new Map();
+let latestDaily = [];
+let latestTasks = [];
 
 const compact = new Intl.NumberFormat("en", { notation: "compact", maximumFractionDigits: 1 });
-const formatCount = (value) => compact.format(value ?? 0);
-const formatUsd = (value) => value == null ? "–" : value < 10 ? `$${value.toFixed(2)}` : `$${compact.format(value)}`;
-const formatMinutes = (value) => {
-  const minutes = value ?? 0;
-  if (minutes < 1) return `${Math.round(minutes * 60)} s`;
-  return minutes >= 60 ? `${(minutes / 60).toFixed(1)} h` : `${minutes.toFixed(1)} min`;
-};
-const formatPercent = (value) => value == null ? "–" : `${(value * 100).toFixed(1)}%`;
-const failureRatio = (row) => row && row.tool_calls ? row.tool_failures / row.tool_calls : null;
+
+function formatCount(value) { return value == null ? "–" : compact.format(value); }
+function formatUsd(value) {
+  if (value == null) return "–";
+  if (value < 1) return `$${value.toFixed(3)}`;
+  return value < 100 ? `$${value.toFixed(2)}` : `$${compact.format(value)}`;
+}
+function formatMinutes(value) {
+  if (value == null) return "–";
+  if (value < 1) return `${Math.round(value * 60)} s`;
+  return value >= 60 ? `${(value / 60).toFixed(1)} h` : `${value.toFixed(1)} min`;
+}
+function formatSeconds(value) {
+  if (value == null) return "–";
+  return value >= 60 ? formatMinutes(value / 60) : `${value.toFixed(1)} s`;
+}
+function formatPercent(value) { return value == null ? "–" : `${(value * 100).toFixed(1)}%`; }
+function formatRatio(value) { return value == null ? "–" : value.toFixed(1); }
+function ratio(part, whole) { return whole ? part / whole : null; }
 
 function element(tag, properties = {}, ...children) {
   const node = Object.assign(document.createElement(tag), properties);
@@ -103,38 +256,73 @@ function element(tag, properties = {}, ...children) {
   return node;
 }
 
-async function report(name) {
-  const response = await fetch(`/api/${name}?days=${days}`);
+function svgNode(tag, attributes = {}) {
+  const node = document.createElementNS("http://www.w3.org/2000/svg", tag);
+  Object.entries(attributes).forEach(([name, value]) => node.setAttribute(name, value));
+  return node;
+}
+
+function scopeParams(extra = {}) {
+  const params = new URLSearchParams({ days: state.days });
+  ["project", "host", "agent"].forEach((field) => { if (state[field]) params.set(field, state[field]); });
+  Object.entries(extra).forEach(([field, value]) => params.set(field, value));
+  return params;
+}
+
+async function panel(name, extra) {
+  const response = await fetch(`/api/${name}?${scopeParams(extra)}`);
   if (!response.ok) throw new Error(`${name}: ${await response.text()}`);
   return response.json();
 }
 
-function deltaText(current, previous, unit) {
-  if (current == null || previous == null) return "no earlier period to compare";
-  const difference = current - previous;
-  const arrow = difference > 0 ? "▲" : difference < 0 ? "▼" : "■";
-  if (unit === "points") return `${arrow} ${Math.abs(difference * 100).toFixed(1)} pts vs previous`;
-  if (previous === 0) return `${arrow} from 0 vs previous`;
-  return `${arrow} ${Math.abs((difference / previous) * 100).toFixed(0)}% vs previous`;
+function syncUrl() {
+  const params = scopeParams();
+  if (state.session) params.set("session", state.session);
+  history.replaceState(null, "", `?${params}`);
 }
 
-function renderTiles(rows) {
-  const current = rows.find((row) => row.period === "current") ?? {};
-  const previous = rows.find((row) => row.period === "previous");
-  const tiles = [
-    ["Tokens", formatCount(current.total_tokens), current.total_tokens, previous?.total_tokens],
-    ["API-equivalent spend", formatUsd(current.api_usd), current.api_usd, previous?.api_usd],
-    ["Tasks", formatCount(current.sessions), current.sessions, previous?.sessions],
-    ["Cache hit rate", formatPercent(current.cache_hit_ratio), current.cache_hit_ratio, previous?.cache_hit_ratio, "points"],
-    ["Tool failure rate", formatPercent(failureRatio(current)), failureRatio(current), failureRatio(previous), "points"],
-    ["Time in tools", formatMinutes(current.tool_minutes), current.tool_minutes, previous?.tool_minutes],
-    ["Waiting on you", formatMinutes(current.permission_minutes), current.permission_minutes, previous?.permission_minutes],
-  ];
-  document.getElementById("tiles").replaceChildren(...tiles.map(([label, value, now, before, unit]) =>
-    element("div", { className: "tile" },
-      element("div", { className: "label", textContent: label }),
-      element("div", { className: "value", textContent: value }),
-      element("div", { className: "delta", textContent: deltaText(now, before, unit) }))));
+function bandStatus(value, sample, good, poor) {
+  if (value == null) return { tone: "", text: "No data" };
+  if (sample < MIN_SAMPLE) return { tone: "", text: "Too few samples" };
+  const higherIsBetter = good > poor;
+  const isGood = higherIsBetter ? value >= good : value < good;
+  const isPoor = higherIsBetter ? value < poor : value > poor;
+  const tone = isGood ? "good" : isPoor ? "poor" : "watch";
+  return { tone, text: STATUS_LABELS[tone] };
+}
+
+function deltaNode(current, previous, better, usePoints) {
+  if (current == null || previous == null) return element("span", { className: "delta muted", textContent: "no earlier data" });
+  const difference = current - previous;
+  if (difference === 0) return element("span", { className: "delta", textContent: "■ no change" });
+  const arrow = difference > 0 ? "▲" : "▼";
+  const size = usePoints ? `${Math.abs(difference * 100).toFixed(1)} pts`
+    : previous === 0 ? "from 0" : `${Math.abs((difference / previous) * 100).toFixed(0)}%`;
+  const improved = better === "up" ? difference > 0 : difference < 0;
+  const tone = better ? (improved ? "better" : "worse") : "";
+  return element("span", { className: `delta ${tone}`, textContent: `${arrow} ${size}` });
+}
+
+function sparkline(values) {
+  const known = values.filter((value) => value != null);
+  if (known.length < 2) return document.createTextNode("");
+  const peak = Math.max(...known), floor = Math.min(...known), range = peak - floor || 1;
+  const x = (index) => 2 + (index * 68) / Math.max(1, values.length - 1);
+  const y = (value) => 21 - ((value - floor) / range) * 18;
+  const svg = svgNode("svg", { class: "spark", viewBox: "0 0 72 24", "aria-hidden": "true" });
+  const points = values.map((value, index) => value == null ? null : `${x(index)},${y(value)}`).filter(Boolean).join(" ");
+  svg.append(svgNode("polyline", { points, fill: "none", stroke: "var(--series-previous)", "stroke-width": 2, "stroke-linejoin": "round", "stroke-linecap": "round" }));
+  return svg;
+}
+
+function tile({ label, value, current, previous, better, points, status, hint, spark }) {
+  const top = element("div", { className: "top" }, element("span", { className: "label", textContent: label }));
+  if (status) top.append(element("span", { className: `status ${status.tone}`, textContent: status.text }));
+  return element("div", { className: "tile" },
+    top,
+    element("div", { className: "value", textContent: value }),
+    element("div", { className: "row" }, deltaNode(current, previous, better, points), spark ?? document.createTextNode("")),
+    element("div", { className: "hint", textContent: hint ?? "" }));
 }
 
 function dayList(count, endOffset) {
@@ -146,172 +334,463 @@ function dayList(count, endOffset) {
   });
 }
 
-function svgNode(tag, attributes) {
-  const node = document.createElementNS("http://www.w3.org/2000/svg", tag);
-  Object.entries(attributes).forEach(([name, value]) => node.setAttribute(name, value));
-  return node;
+function dailySeries(rows, pick) {
+  return dayList(state.days, 0).map((day) => pick(rows.filter((row) => row.day === day)));
+}
+
+function renderTiles(rows, daily) {
+  const now = rows.find((row) => row.period === "current") ?? {};
+  const before = rows.find((row) => row.period === "previous") ?? {};
+  const known = (row, value) => row.requests ? value : null;
+  const failure = (row) => ratio(row.tool_failures, row.tool_calls);
+  const errors = (row) => ratio(row.api_errors, row.requests);
+  const perTask = (row) => row.api_usd == null ? null : ratio(row.api_usd, row.tasks);
+  const perPrompt = (row) => ratio(row.tool_calls, row.prompts);
+  const oneShot = (row) => ratio(row.one_prompt_tasks, row.prompted_tasks);
+  const total = (field) => dailySeries(daily, (day) => day.length ? day.reduce((sum, row) => sum + (row[field] ?? 0), 0) : null);
+  const cacheSpark = dailySeries(daily, (day) => day.length ? day.reduce((sum, row) => sum + (row.cache_hit ?? 0) * row.tokens, 0) / day.reduce((sum, row) => sum + row.tokens, 0) : null);
+  const failureSpark = dailySeries(daily, (day) => ratio(day.reduce((sum, row) => sum + row.tool_failures, 0), day.reduce((sum, row) => sum + row.tool_calls, 0)));
+
+  document.getElementById("tiles-cost").replaceChildren(
+    tile({ label: "API-equivalent spend", value: formatUsd(now.api_usd), current: now.api_usd, previous: before.api_usd, better: "down", hint: "Claude only, at API list prices", spark: sparkline(total("api_usd")) }),
+    tile({ label: "Tokens", value: formatCount(known(now, now.tokens)), current: known(now, now.tokens), previous: known(before, before.tokens), hint: "All agents, including cached", spark: sparkline(total("tokens")) }),
+    tile({ label: "Tasks", value: formatCount(known(now, now.tasks)), current: known(now, now.tasks), previous: known(before, before.tasks), hint: "Sessions with at least one model call", spark: sparkline(total("tasks")) }),
+    tile({ label: "Spend per task", value: formatUsd(perTask(now)), current: perTask(now), previous: perTask(before), better: "down", hint: "Lower is better, for similar work" }));
+
+  document.getElementById("tiles-health").replaceChildren(
+    tile({ label: "Cache hit rate", value: formatPercent(known(now, now.cache_hit)), current: known(now, now.cache_hit), previous: known(before, before.cache_hit), better: "up", points: true, status: bandStatus(known(now, now.cache_hit), now.requests ?? 0, 0.85, 0.6), hint: "Target ≥ 85%, poor below 60%", spark: sparkline(cacheSpark) }),
+    tile({ label: "Tool failure rate", value: formatPercent(failure(now)), current: failure(now), previous: failure(before), better: "down", points: true, status: bandStatus(failure(now), now.tool_calls ?? 0, 0.05, 0.15), hint: "Target < 5%, poor above 15%", spark: sparkline(failureSpark) }),
+    tile({ label: "Slow first token, p95", value: formatSeconds(known(now, now.ttft_p95_ms && now.ttft_p95_ms / 1000)), current: known(now, now.ttft_p95_ms), previous: known(before, before.ttft_p95_ms), better: "down", status: bandStatus(known(now, now.ttft_p95_ms), now.requests ?? 0, 5000, 15000), hint: "Target < 5 s, poor above 15 s" }),
+    tile({ label: "API errors", value: formatPercent(errors(now)), current: errors(now), previous: errors(before), better: "down", points: true, status: bandStatus(errors(now), now.requests ?? 0, 0.01, 0.05), hint: `${formatCount(now.api_errors ?? 0)} errors. Target < 1%, poor above 5%` }));
+
+  document.getElementById("tiles-output").replaceChildren(
+    tile({ label: "Commits", value: formatCount(known(now, now.commits)), current: known(now, now.commits), previous: known(before, before.commits), hint: "Made by Claude" }),
+    tile({ label: "Pull requests", value: formatCount(known(now, now.pull_requests)), current: known(now, now.pull_requests), previous: known(before, before.pull_requests), hint: "Made by Claude" }),
+    tile({ label: "Lines changed", value: formatCount(known(now, now.lines_changed)), current: known(now, now.lines_changed), previous: known(before, before.lines_changed), hint: "Added plus removed, Claude only" }),
+    tile({ label: "Tool calls per prompt", value: formatRatio(perPrompt(now)), current: perPrompt(now), previous: perPrompt(before), hint: "How far one prompt carries the agent" }),
+    tile({ label: "One-prompt tasks", value: formatPercent(oneShot(now)), current: oneShot(now), previous: oneShot(before), better: "up", points: true, hint: "Finished without a follow-up prompt" }));
+}
+
+function niceCeiling(value) {
+  const magnitude = 10 ** Math.floor(Math.log10(value));
+  const step = [1, 2, 5, 10].find((candidate) => candidate * magnitude >= value);
+  return step * magnitude;
 }
 
 function renderTrend(rows) {
-  const byDay = new Map(rows.map((row) => [row.day, row.total_tokens]));
-  const currentDays = dayList(days, 0);
-  const previousDays = dayList(days, days);
-  const current = currentDays.map((day) => byDay.get(day) ?? 0);
-  const previous = previousDays.map((day) => byDay.get(day) ?? 0);
-  const peak = Math.max(1, ...current, ...previous);
+  latestDaily = rows;
+  const metric = TREND_METRICS[state.trendMetric];
+  const series = AGENT_SERIES.filter(([agent]) => metric.field !== "api_usd" || agent === "claude")
+    .filter(([agent]) => !state.agent || state.agent === agent);
+  const valueOf = (day, agent) => rows.find((row) => row.day === day && row.agent === agent)?.[metric.field] ?? 0;
+  const totalOf = (day) => series.reduce((sum, [agent]) => sum + valueOf(day, agent), 0);
+  const currentDays = dayList(state.days, 0);
+  const previousDays = dayList(state.days, state.days);
+  const hasPrevious = previousDays.some((day) => totalOf(day) > 0);
+  const peak = niceCeiling(Math.max(metric.field === "api_usd" ? 0.01 : 1, ...currentDays.map(totalOf), ...previousDays.map(totalOf)));
 
-  document.getElementById("trend-note").textContent = `Last ${days} days against the ${days} before, aligned by day.`;
-  document.getElementById("legend").replaceChildren(
-    element("span", {}, element("i", { style: "border-color: var(--series-1)" }), `Last ${days} days`),
-    element("span", {}, element("i", { style: "border-color: var(--series-previous); border-top-style: dashed" }), `Previous ${days} days`));
+  document.getElementById("trend-title").textContent = `${metric.label} per day`;
+  document.getElementById("trend-note").textContent = metric.field === "api_usd"
+    ? `Last ${state.days} days against the ${state.days} before. Claude's API-equivalent estimate; Codex reports no cost.`
+    : `Last ${state.days} days against the ${state.days} before, aligned by day.`;
+  document.getElementById("trend-metric").replaceChildren(...Object.entries(TREND_METRICS).map(([key, option]) => {
+    const button = element("button", { textContent: option.label });
+    button.setAttribute("aria-pressed", String(key === state.trendMetric));
+    button.addEventListener("click", () => { state.trendMetric = key; renderTrend(latestDaily); });
+    return button;
+  }));
+  const legendItems = series.map(([, label, color]) => element("span", {}, element("i", { style: `background: ${color}` }), label));
+  if (hasPrevious) legendItems.push(element("span", {}, element("i", { className: "line", style: "border-color: var(--series-previous)" }), `Previous ${state.days} days`));
+  document.getElementById("legend").replaceChildren(...(series.length > 1 || hasPrevious ? legendItems : []));
 
   const chart = document.getElementById("trend");
-  const width = Math.max(300, chart.clientWidth), height = 240, left = 52, right = 12, top = 10, bottom = 26;
-  const x = (index) => left + (index * (width - left - right)) / Math.max(1, days - 1);
-  const y = (value) => top + (1 - value / peak) * (height - top - bottom);
-  const svg = svgNode("svg", { viewBox: `0 0 ${width} ${height}`, role: "img", "aria-label": "Tokens per day compared with the previous period" });
+  const width = Math.max(300, chart.clientWidth), height = 260, left = 52, right = 8, top = 10, bottom = 26;
+  const plotHeight = height - top - bottom;
+  const slot = (width - left - right) / state.days;
+  const barWidth = Math.min(24, slot * 0.6);
+  const center = (index) => left + slot * (index + 0.5);
+  const y = (value) => top + (1 - value / peak) * plotHeight;
+  const svg = svgNode("svg", { viewBox: `0 0 ${width} ${height}`, role: "img", "aria-label": `${metric.label} per day. A table follows the chart.` });
 
   [0, 0.5, 1].forEach((share) => {
     const value = peak * share;
-    svg.append(svgNode("line", { x1: left, x2: width - right, y1: y(value), y2: y(value), stroke: "var(--grid)" }));
+    svg.append(svgNode("line", { x1: left, x2: width - right, y1: y(value), y2: y(value), stroke: "var(--line)" }));
     const label = svgNode("text", { x: left - 8, y: y(value) + 4, "text-anchor": "end", "font-size": 12, fill: "var(--text-muted)" });
-    label.textContent = formatCount(value);
-    svg.append(label);
-  });
-  const step = Math.ceil(days / Math.max(3, Math.floor(width / 110)));
-  currentDays.forEach((day, index) => {
-    if (index % step) return;
-    const label = svgNode("text", { x: x(index), y: height - 8, "text-anchor": "middle", "font-size": 12, fill: "var(--text-muted)" });
-    label.textContent = day.slice(5);
+    label.textContent = metric.format(value);
     svg.append(label);
   });
 
-  const points = (values) => values.map((value, index) => `${x(index)},${y(value)}`).join(" ");
-  svg.append(svgNode("polyline", { points: points(previous), fill: "none", stroke: "var(--series-previous)", "stroke-width": 2, "stroke-dasharray": "5 4", "stroke-linejoin": "round" }));
-  svg.append(svgNode("polyline", { points: points(current), fill: "none", stroke: "var(--series-1)", "stroke-width": 2, "stroke-linejoin": "round" }));
-  const crosshair = svgNode("line", { y1: top, y2: height - bottom, stroke: "var(--text-muted)", visibility: "hidden" });
-  const marker = svgNode("circle", { r: 4, fill: "var(--series-1)", stroke: "var(--surface-1)", "stroke-width": 2, visibility: "hidden" });
-  svg.append(crosshair, marker);
-
+  const labelStep = Math.ceil(state.days / Math.max(3, Math.floor(width / 70)));
   const tooltip = element("div", { className: "tooltip", hidden: true });
+  const showTooltip = (index) => {
+    const day = currentDays[index];
+    const lines = series.map(([agent, label, color]) => element("div", {},
+      element("i", { style: `border-color: ${color}` }), element("strong", { textContent: metric.format(valueOf(day, agent)) }), ` ${label}`));
+    if (hasPrevious) lines.push(element("div", {},
+      element("i", { style: "border-color: var(--series-previous)" }), element("strong", { textContent: metric.format(totalOf(previousDays[index])) }), ` ${previousDays[index].slice(5)}`));
+    tooltip.replaceChildren(element("div", { textContent: day }), ...lines);
+    tooltip.hidden = false;
+    const position = (center(index) / width) * chart.clientWidth;
+    tooltip.style.left = `${Math.max(0, Math.min(position + 12, chart.clientWidth - tooltip.offsetWidth))}px`;
+    tooltip.style.top = "4px";
+  };
+
+  currentDays.forEach((day, index) => {
+    let base = 0;
+    const visible = series.filter(([agent]) => valueOf(day, agent) > 0);
+    visible.forEach(([agent, , color], position) => {
+      const value = valueOf(day, agent);
+      const segmentTop = y(base + value);
+      const segmentBottom = y(base) - (position ? 2 : 0);
+      const height = Math.max(1, segmentBottom - segmentTop);
+      const isLast = position === visible.length - 1;
+      const radius = isLast ? Math.min(4, height, barWidth / 2) : 0;
+      const x0 = center(index) - barWidth / 2, x1 = x0 + barWidth, y1 = segmentTop + height;
+      svg.append(svgNode("path", {
+        fill: color,
+        d: `M${x0},${y1}V${segmentTop + radius}Q${x0},${segmentTop} ${x0 + radius},${segmentTop}H${x1 - radius}Q${x1},${segmentTop} ${x1},${segmentTop + radius}V${y1}Z`,
+      }));
+      base += value;
+    });
+    if (index % labelStep === (state.days - 1) % labelStep) {
+      const label = svgNode("text", { x: center(index), y: height - 8, "text-anchor": "middle", "font-size": 12, fill: "var(--text-muted)" });
+      label.textContent = day.slice(5);
+      svg.append(label);
+    }
+  });
+
+  if (hasPrevious) {
+    const points = previousDays.map((day, index) => `${center(index)},${y(totalOf(day))}`).join(" ");
+    svg.append(svgNode("polyline", { points, fill: "none", stroke: "var(--series-previous)", "stroke-width": 2, "stroke-linejoin": "round", "stroke-linecap": "round" }));
+  }
+
+  currentDays.forEach((day, index) => {
+    const band = svgNode("rect", { class: "band", x: left + slot * index, y: top, width: slot, height: plotHeight, tabindex: 0, "aria-label": `${day}: ${metric.format(totalOf(day))}` });
+    band.addEventListener("pointerenter", () => showTooltip(index));
+    band.addEventListener("focus", () => showTooltip(index));
+    band.addEventListener("pointerleave", () => { tooltip.hidden = true; });
+    band.addEventListener("blur", () => { tooltip.hidden = true; });
+    svg.append(band);
+  });
   chart.replaceChildren(svg, tooltip);
 
-  svg.addEventListener("pointermove", (event) => {
-    const bounds = svg.getBoundingClientRect();
-    const position = ((event.clientX - bounds.left) / bounds.width) * width;
-    const index = Math.max(0, Math.min(days - 1, Math.round(((position - left) / (width - left - right)) * (days - 1))));
-    crosshair.setAttribute("x1", x(index));
-    crosshair.setAttribute("x2", x(index));
-    crosshair.setAttribute("visibility", "visible");
-    marker.setAttribute("cx", x(index));
-    marker.setAttribute("cy", y(current[index]));
-    marker.setAttribute("visibility", "visible");
-    tooltip.hidden = false;
-    tooltip.textContent = `${currentDays[index]}: ${formatCount(current[index])} · ${previousDays[index]}: ${formatCount(previous[index])}`;
-    const pixel = (x(index) / width) * bounds.width;
-    tooltip.style.left = `${Math.min(pixel + 8, bounds.width - tooltip.offsetWidth)}px`;
-    tooltip.style.top = "4px";
-  });
-  svg.addEventListener("pointerleave", () => {
-    crosshair.setAttribute("visibility", "hidden");
-    marker.setAttribute("visibility", "hidden");
-    tooltip.hidden = true;
-  });
+  renderTable("trend-table", [
+    { title: "Day", render: (row) => row.day, sort: (row) => row.day },
+    ...series.map(([agent, label]) => ({ title: label, number: true, render: (row) => metric.format(row[agent]), sort: (row) => row[agent] })),
+    { title: "Total", number: true, render: (row) => metric.format(row.total), sort: (row) => row.total },
+  ], currentDays.map((day) => ({ day, total: totalOf(day), ...Object.fromEntries(series.map(([agent]) => [agent, valueOf(day, agent)])) })), "No activity.");
 }
 
-function renderTable(targetId, columns, rows, emptyMessage) {
+function renderTime(summaryRows) {
+  const now = summaryRows.find((row) => row.period === "current") ?? {};
+  const parts = [
+    ["Model", now.model_minutes ?? 0, "var(--time-model)"],
+    ["Tools", now.tool_minutes ?? 0, "var(--time-tools)"],
+    ["Waiting on you", now.wait_minutes ?? 0, "var(--time-wait)"],
+  ];
+  const total = parts.reduce((sum, [, minutes]) => sum + minutes, 0);
+  const bar = document.getElementById("time-bar");
+  const shown = parts.filter(([, minutes]) => minutes > 0);
+  bar.setAttribute("role", "img");
+  bar.setAttribute("aria-label", parts.map(([label, minutes]) => `${label} ${formatMinutes(minutes)}`).join(", "));
+  bar.replaceChildren(...shown.map(([label, minutes, color]) => {
+    const share = minutes / total;
+    return element("div", { style: `flex: ${minutes} 1 0; background: ${color}`, title: `${label}: ${formatMinutes(minutes)}`, textContent: share > 0.12 ? `${Math.round(share * 100)}%` : "" });
+  }));
+  document.getElementById("time-legend").replaceChildren(...parts.map(([label, minutes, color]) =>
+    element("span", {}, element("i", { style: `background: ${color}` }), `${label} ${formatMinutes(minutes)}`)));
+}
+
+function renderTable(targetId, columns, rows, emptyMessage, onRowClick) {
   const target = document.getElementById(targetId);
   if (!rows.length) {
     target.replaceChildren(element("div", { className: "empty", textContent: emptyMessage }));
     return;
   }
-  const head = element("tr", {}, ...columns.map((column) =>
-    element("th", { textContent: column.title, className: column.number ? "number" : "" })));
-  const body = rows.map((row) => element("tr", {}, ...columns.map((column) => {
-    const cell = element("td", { className: column.number ? "number" : column.wide ? "wide" : "" });
-    cell.append(column.render(row));
-    return cell;
-  })));
+  const sorted = tableSorts.get(targetId);
+  const column = sorted && columns.find((candidate) => candidate.title === sorted.title);
+  const ordered = column ? [...rows].sort((a, b) => {
+    const [first, second] = [column.sort(a), column.sort(b)];
+    const order = first < second ? -1 : first > second ? 1 : 0;
+    return sorted.descending ? -order : order;
+  }) : rows;
+  const head = element("tr", {}, ...columns.map((candidate) => {
+    const heading = element("th", { className: candidate.number ? "number" : "" });
+    if (!candidate.sort) {
+      heading.textContent = candidate.title;
+      return heading;
+    }
+    const isActive = column === candidate;
+    if (isActive) heading.setAttribute("aria-sort", sorted.descending ? "descending" : "ascending");
+    heading.append(element("button", {
+      textContent: `${candidate.title}${isActive ? (sorted.descending ? " ↓" : " ↑") : ""}`,
+      onclick: () => {
+        tableSorts.set(targetId, { title: candidate.title, descending: isActive ? !sorted.descending : true });
+        renderTable(targetId, columns, rows, emptyMessage, onRowClick);
+      },
+    }));
+    return heading;
+  }));
+  const body = ordered.map((row) => {
+    const line = element("tr", {}, ...columns.map((candidate) => {
+      const cell = element("td", { className: candidate.number ? "number" : candidate.wide ? "wide" : "" });
+      cell.append(candidate.render(row));
+      return cell;
+    }));
+    if (onRowClick) {
+      line.className = "clickable";
+      line.addEventListener("click", (event) => { if (!event.target.closest("button")) onRowClick(row); });
+    }
+    return line;
+  });
   target.replaceChildren(element("table", {}, element("thead", {}, head), element("tbody", {}, ...body)));
 }
 
-function labelWithBar(text, sub, share) {
-  const wrapper = element("div", {}, element("div", { textContent: text }));
-  if (sub) wrapper.append(element("div", { className: "sub", textContent: sub }));
-  wrapper.append(element("div", { className: "bar", style: `width: ${Math.max(share * 100, 1)}%` }));
+function labelled(primary, secondary, share) {
+  const wrapper = element("div", {}, primary);
+  if (secondary) wrapper.append(element("div", { className: "muted", textContent: secondary }));
+  if (share != null) wrapper.append(element("div", { className: "bar", style: `width: ${Math.max(share * 100, 1)}%` }));
   return wrapper;
 }
-
-const KIND_LABELS = { command: "command", tool: "tool", permission: "permission wait", api_error: "API error" };
 
 function renderBlockers(rows) {
   const peak = Math.max(0.01, ...rows.map((row) => row.minutes));
   renderTable("blockers", [
-    { title: "Blocker", wide: true, render: (row) => labelWithBar(row.name || "unknown", KIND_LABELS[row.kind], row.minutes / peak) },
-    { title: "Total", number: true, render: (row) => formatMinutes(row.minutes) },
-    { title: "Longest", number: true, render: (row) => `${row.longest_seconds} s` },
-    { title: "Runs", number: true, render: (row) => formatCount(row.events) },
-    { title: "Failed", number: true, render: (row) => formatCount(row.failures) },
-  ], rows, "Nothing recorded in this period.");
+    { title: "Blocker", wide: true, render: (row) => labelled(
+        element("button", { className: "link", textContent: row.name || "unknown", onclick: () => openBlocker(row) }), KIND_LABELS[row.kind], row.minutes / peak) },
+    { title: "Total", number: true, render: (row) => formatMinutes(row.minutes), sort: (row) => row.minutes },
+    { title: "p95", number: true, render: (row) => formatSeconds(row.p95_seconds), sort: (row) => row.p95_seconds },
+    { title: "Runs", number: true, render: (row) => formatCount(row.events), sort: (row) => row.events },
+    { title: "Failed", number: true, render: (row) => formatPercent(ratio(row.failures, row.events)), sort: (row) => ratio(row.failures, row.events) },
+  ], rows, "Nothing blocked an agent in this period.", openBlocker);
 }
 
 function renderProjects(rows) {
   const peak = Math.max(1, ...rows.map((row) => row.tokens));
+  const applyProject = (row) => {
+    state.project = state.project === row.project ? "" : row.project;
+    refresh();
+  };
   renderTable("projects", [
-    { title: "Project", wide: true, render: (row) => labelWithBar(row.project, `${formatCount(row.sessions)} tasks`, row.tokens / peak) },
-    { title: "Tokens", number: true, render: (row) => formatCount(row.tokens) },
-    { title: "Change", number: true, render: (row) => row.previous_tokens ? deltaText(row.tokens, row.previous_tokens).replace(" vs previous", "") : "new" },
-    { title: "API $", number: true, render: (row) => formatUsd(row.api_usd) },
-    { title: "Tool time", number: true, render: (row) => formatMinutes(row.tool_minutes) },
-  ], rows, "No project activity in this period.");
+    { title: "Project", wide: true, render: (row) => labelled(
+        element("button", { className: "link", textContent: row.project, onclick: () => applyProject(row) }), `${formatCount(row.tasks)} tasks`, row.tokens / peak) },
+    { title: "API $", number: true, render: (row) => formatUsd(row.api_usd), sort: (row) => row.api_usd },
+    { title: "Tokens", number: true, render: (row) => formatCount(row.tokens), sort: (row) => row.tokens },
+    { title: "Change", number: true, render: (row) => row.previous_tokens ? deltaNode(row.tokens, row.previous_tokens) : "new", sort: (row) => ratio(row.tokens, row.previous_tokens) ?? 0 },
+    { title: "Tool time", number: true, render: (row) => formatMinutes(row.tool_minutes), sort: (row) => row.tool_minutes },
+    { title: "Failed", number: true, render: (row) => formatPercent(ratio(row.tool_failures, row.tool_calls)), sort: (row) => ratio(row.tool_failures, row.tool_calls) ?? 0 },
+  ], rows, "No project activity in this period.", applyProject);
 }
 
-function renderTasks(rows) {
+function renderTasks() {
+  const needle = state.taskSearch.toLowerCase();
+  const rows = latestTasks.filter((row) => `${row.task} ${row.project} ${row.branch}`.toLowerCase().includes(needle));
   renderTable("tasks", [
-    { title: "Task", wide: true, render: (row) => element("div", {},
-        element("div", { textContent: row.task || "untitled" }),
-        element("div", { className: "sub", textContent: `${row.project}${row.branch ? ` · ${row.branch}` : ""} · ${row.agent} on ${row.host || "unknown host"} · ${row.started_at}` })) },
-    { title: "Tokens", number: true, render: (row) => formatCount(row.tokens) },
-    { title: "API $", number: true, render: (row) => formatUsd(row.api_usd) },
-    { title: "Duration", number: true, render: (row) => `${row.minutes} min` },
-    { title: "Tool time", number: true, render: (row) => formatMinutes(row.tool_minutes) },
-    { title: "Failed tools", number: true, render: (row) => formatCount(row.tool_failures) },
-  ], rows, "No tasks in this period.");
+    { title: "Task", wide: true, render: (row) => labelled(
+        element("button", { className: "link", textContent: row.task || "untitled", onclick: () => openSession(row.session_id) }),
+        `${row.project}${row.branch ? ` · ${row.branch}` : ""} · ${row.agent} on ${row.host || "unknown host"} · ${row.started_at}`) },
+    { title: "API $", number: true, render: (row) => formatUsd(row.api_usd), sort: (row) => row.api_usd ?? -1 },
+    { title: "Tokens", number: true, render: (row) => formatCount(row.tokens), sort: (row) => row.tokens },
+    { title: "Duration", number: true, render: (row) => formatMinutes(row.minutes), sort: (row) => row.minutes },
+    { title: "Prompts", number: true, render: (row) => formatCount(row.prompts), sort: (row) => row.prompts },
+    { title: "Tools", number: true, render: (row) => formatCount(row.tool_calls), sort: (row) => row.tool_calls },
+    { title: "Failed", number: true, render: (row) => formatCount(row.tool_failures), sort: (row) => row.tool_failures },
+    { title: "Tool time", number: true, render: (row) => formatMinutes(row.tool_minutes), sort: (row) => row.tool_minutes },
+  ], rows, state.taskSearch ? "No task matches this search." : "No tasks in this period.", (row) => openSession(row.session_id));
+}
+
+function renderModels(rows) {
+  renderTable("models", [
+    { title: "Model", wide: true, render: (row) => labelled(row.model || "unknown", row.agent), sort: (row) => row.model },
+    { title: "Calls", number: true, render: (row) => formatCount(row.requests), sort: (row) => row.requests },
+    { title: "Tokens", number: true, render: (row) => formatCount(row.tokens), sort: (row) => row.tokens },
+    { title: "Cache", number: true, render: (row) => formatPercent(row.cache_hit), sort: (row) => row.cache_hit ?? -1 },
+    { title: "TTFT p95", number: true, render: (row) => row.ttft_p95_ms ? formatSeconds(row.ttft_p95_ms / 1000) : "–", sort: (row) => row.ttft_p95_ms },
+    { title: "API $", number: true, render: (row) => formatUsd(row.api_usd), sort: (row) => row.api_usd ?? -1 },
+  ], rows, "No model calls in this period.");
+}
+
+function sinceText(minutes) {
+  if (minutes < 1) return "just now";
+  if (minutes < 60) return `${minutes} min ago`;
+  return minutes < 1440 ? `${Math.floor(minutes / 60)} h ago` : `${Math.floor(minutes / 1440)} d ago`;
+}
+
+function renderFleet(rows, t3Rows) {
+  renderTable("fleet", [
+    { title: "Host", render: (row) => row.host },
+    { title: "Agent", render: (row) => row.agent },
+    { title: "Last event", number: true, render: (row) => sinceText(row.minutes_since) },
+    { title: "Events, 24 h", number: true, render: (row) => formatCount(row.events_today) },
+  ], rows, "No host has reported yet.");
+  renderTable("t3", [
+    { title: "T3 runs", render: (row) => `${row.provider}${row.delegated === "true" ? " delegated" : ""}` },
+    { title: "Done", number: true, render: (row) => formatCount(row.completed) },
+    { title: "Cancelled", number: true, render: (row) => formatCount(row.cancelled) },
+    { title: "Avg queue", number: true, render: (row) => formatSeconds(row.queue_seconds) },
+    { title: "Avg run", number: true, render: (row) => formatSeconds(row.run_seconds) },
+  ], t3Rows, "No T3 runs in this period.");
+  const newest = Math.min(...rows.map((row) => row.minutes_since));
+  document.getElementById("freshness").textContent = rows.length ? `Last event ${sinceText(newest)}` : "No events yet";
+  const earliest = rows.map((row) => row.first_seen).sort()[0];
+  const coverage = document.getElementById("coverage");
+  const spansPeriod = earliest && new Date(earliest.replace(" ", "T")) <= new Date(Date.now() - state.days * 86400000);
+  coverage.hidden = !earliest || spansPeriod;
+  coverage.textContent = `Data starts ${earliest}, so this period is partial. Agent sessions export only if they started after telemetry was set up on their host.`;
+}
+
+function renderSelect(id, field, label, rows) {
+  const values = rows.filter((row) => row.dimension === field).map((row) => row.value);
+  if (state[field] && !values.includes(state[field])) values.push(state[field]);
+  const select = document.getElementById(id);
+  select.replaceChildren(element("option", { value: "", textContent: `All ${label}` }),
+    ...values.map((value) => element("option", { value, textContent: value })));
+  select.value = state[field];
 }
 
 function renderRanges() {
   document.getElementById("ranges").replaceChildren(...RANGES.map((range) => {
     const button = element("button", { textContent: `${range} days` });
-    button.setAttribute("aria-pressed", String(range === days));
-    button.addEventListener("click", () => {
-      days = range;
-      history.replaceState(null, "", `?days=${range}`);
-      refresh();
-    });
+    button.setAttribute("aria-pressed", String(range === state.days));
+    button.addEventListener("click", () => { state.days = range; refresh(); });
     return button;
   }));
+  document.getElementById("clear").hidden = !(state.project || state.host || state.agent);
+}
+
+function openDrawer(title, subtitle, ...content) {
+  document.getElementById("drawer-title").textContent = title;
+  document.getElementById("drawer-subtitle").textContent = subtitle;
+  document.getElementById("drawer-body").replaceChildren(...content);
+  const drawer = document.getElementById("drawer");
+  if (!drawer.open) drawer.showModal();
+}
+
+function fact(label, value) {
+  return element("div", {}, element("strong", { textContent: value }), element("span", { className: "muted", textContent: label }));
+}
+
+function step(row) {
+  const amount = [row.seconds ? formatSeconds(row.seconds) : "", row.api_usd ? formatUsd(row.api_usd) : ""].filter(Boolean).join(" · ");
+  const body = element("div", {}, element("div", { textContent: row.title }));
+  if (row.detail) body.append(element("pre", { className: "text", textContent: row.detail }));
+  return element("div", { className: `step ${row.kind}${row.failed ? " failed" : ""}` },
+    element("div", { className: "time", textContent: row.at.slice(11) }),
+    element("div", { className: "kind", textContent: row.failed && row.kind === "tool" ? "tool failed" : STEP_LABELS[row.kind] }),
+    body,
+    element("div", { className: "amount", textContent: amount }));
+}
+
+async function openSession(sessionId) {
+  state.session = sessionId;
+  syncUrl();
+  openDrawer("Loading task", "");
+  try {
+    const [[summary], steps] = await Promise.all([
+      panel("session_summary", { session: sessionId }),
+      panel("session", { session: sessionId }),
+    ]);
+    if (!summary) {
+      openDrawer("Task not found", sessionId);
+      return;
+    }
+    const facts = element("div", { className: "facts" },
+      fact("API-equivalent", formatUsd(summary.api_usd)),
+      fact("tokens", formatCount(summary.tokens)),
+      fact("duration", formatMinutes(summary.minutes)),
+      fact("prompts", formatCount(summary.prompts)),
+      fact("tool calls", formatCount(summary.tool_calls)),
+      fact("failed tools", formatCount(summary.tool_failures)),
+      fact("tool time", formatMinutes(summary.tool_minutes)));
+    const note = steps.length >= 600 ? element("div", { className: "muted", textContent: "Showing the first 600 steps." }) : document.createTextNode("");
+    openDrawer(summary.task || "Untitled task",
+      `${summary.project}${summary.branch ? ` · ${summary.branch}` : ""} · ${summary.agent} on ${summary.host || "unknown host"} · ${summary.started_at}`,
+      facts, note, element("div", {}, ...steps.map(step)));
+  } catch (error) {
+    openDrawer("Could not load this task", error.message);
+  }
+}
+
+async function openBlocker(row) {
+  openDrawer(row.name || "unknown", "Loading runs");
+  try {
+    const runs = await panel("blocker_runs", { kind: row.kind, name: row.name });
+    const facts = element("div", { className: "facts" },
+      fact("total", formatMinutes(row.minutes)),
+      fact("runs", formatCount(row.events)),
+      fact("p95", formatSeconds(row.p95_seconds)),
+      fact("longest", formatSeconds(row.longest_seconds)),
+      fact("failed", formatCount(row.failures)));
+    const list = element("div", {}, ...runs.map((run) => {
+      const item = element("div", { className: `step tool${run.failed ? " failed" : ""}` },
+        element("div", { className: "time", textContent: run.at.slice(5, 16) }),
+        element("div", { className: "kind", textContent: run.failed ? "failed" : "ok" }),
+        element("div", {},
+          element("button", { className: "link", textContent: run.task || run.project || "open task", onclick: () => openSession(run.session_id) }),
+          run.detail ? element("pre", { className: "text", textContent: run.detail }) : document.createTextNode("")),
+        element("div", { className: "amount", textContent: formatSeconds(run.seconds) }));
+      return item;
+    }));
+    openDrawer(row.name || "unknown", `${KIND_LABELS[row.kind]} · slowest ${runs.length} runs`, facts, list);
+  } catch (error) {
+    openDrawer("Could not load these runs", error.message);
+  }
 }
 
 async function refresh() {
+  syncUrl();
   renderRanges();
+  const main = document.getElementById("main");
   const banner = document.getElementById("error");
+  main.classList.add("loading");
   try {
-    const [kpis, trend, blockers, projects, tasks] = await Promise.all(
-      ["kpis", "trend", "blockers", "projects", "tasks"].map(report));
-    renderTiles(kpis);
-    renderTrend(trend);
+    const [summary, daily, blockers, projects, tasks, models, filters, fleet, t3] = await Promise.all(
+      ["summary", "daily", "blockers", "projects", "tasks", "models", "filters", "fleet", "t3"].map((name) => panel(name)));
+    renderSelect("filter-project", "project", "projects", filters);
+    renderSelect("filter-host", "host", "hosts", filters);
+    renderSelect("filter-agent", "agent", "agents", filters);
+    renderTiles(summary, daily);
+    renderTrend(daily);
+    renderTime(summary);
     renderBlockers(blockers);
     renderProjects(projects);
-    renderTasks(tasks);
+    latestTasks = tasks;
+    renderTasks();
+    renderModels(models);
+    renderFleet(fleet, t3);
     banner.hidden = true;
   } catch (error) {
     banner.textContent = `Could not load data: ${error.message}`;
     banner.hidden = false;
   }
+  main.classList.remove("loading");
 }
 
+["project", "host", "agent"].forEach((field) => {
+  document.getElementById(`filter-${field}`).addEventListener("change", (event) => {
+    state[field] = event.target.value;
+    refresh();
+  });
+});
+document.getElementById("clear").addEventListener("click", () => {
+  Object.assign(state, { project: "", host: "", agent: "" });
+  refresh();
+});
+document.getElementById("task-search").addEventListener("input", (event) => {
+  state.taskSearch = event.target.value;
+  renderTasks();
+});
+const drawer = document.getElementById("drawer");
+document.getElementById("drawer-close").addEventListener("click", () => drawer.close());
+drawer.addEventListener("click", (event) => { if (event.target === drawer) drawer.close(); });
+drawer.addEventListener("close", () => {
+  state.session = "";
+  syncUrl();
+});
+
 refresh();
-setInterval(refresh, 60000);
+if (state.session) openSession(state.session);
+setInterval(() => { if (!drawer.open) refresh(); }, 60000);
 </script>
 </body>
 </html>

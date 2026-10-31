@@ -83,9 +83,18 @@ T3 Code ─────┘                           redacts, drops noise       
                                                                           └─ web dashboard
 ```
 
-The dashboard runs on the server at `http://<host>:8125`, on all interfaces: this period against the last, tokens per day, biggest blockers,
-spending by project and the biggest tasks. It runs the same SQL as
-`ai-setup report`, so the numbers match what agents see.
+The dashboard runs on the server at `http://<host>:8125`, on all interfaces.
+It compares this period with the last, scores cache hits, tool failures, first
+token latency and API errors against starting targets, and shows where the time
+went, the biggest blockers, spending by project and every task. Filter by range,
+project, host or agent. Click a blocker for each run, or a task for its timeline
+of prompts, model calls and tools. Filters and timelines live in the page URL,
+so a view can be shared. Its queries are in
+[`telemetry/panels`](telemetry/panels), over the same `ai.*` views as
+`ai-setup report`.
+
+A session exports only if it started after `ai-setup sync` wrote the settings:
+Claude and Codex read them once at startup, so running sessions need a restart.
 
 Claude Code telemetry has no project field. A session-start hook in the plugin
 sends the repo and branch, reading the endpoint from `~/.claude/settings.json`
@@ -104,8 +113,10 @@ services.ai-setup-telemetry = {
 ```
 
 ClickHouse and the collector bind only to loopback and `address`, so they do
-not rely on the firewall. The dashboard binds to all interfaces and shows task
-titles without a login, so use the firewall to limit it. Anyone on the tailnet
+not rely on the firewall. The dashboard binds to all interfaces and shows
+prompts, replies and tool input without a login. The module opens the OTLP,
+ClickHouse and dashboard ports on `tailscale0` only, so a firewall must stay on
+for that limit to hold. Anyone on the tailnet
 can send telemetry; only `readers` can run SQL, as the read-only `agent` user. ClickHouse's own `default` user stays on loopback.
 
 Clients, in home-manager:
@@ -121,9 +132,11 @@ programs.ai-setup.telemetry = {
 `ai-setup sync` writes the `env` keys into `~/.claude/settings.json` and a
 marked `[otel]` block into `~/.codex/config.toml`, and removes both when
 `endpoint` is null. It leaves a Codex `[otel]` table of your own alone. Point
-T3 Code at the same endpoint with `T3CODE_OTLP_TRACES_URL` and
-`T3CODE_OTLP_METRICS_URL` in the environment of its server. Its data stays in
-the raw `otel.*` tables; the `ai.*` views cover Claude Code and Codex.
+T3 Code at the same endpoint with `T3CODE_OTLP_METRICS_URL` in the environment
+of its server. Its metrics stay in the raw `otel.*` tables and feed the
+dashboard's run counts; the `ai.*` views cover Claude Code and Codex. The
+collector drops T3 spans, because they are internal and arrive at about 90,000
+an hour.
 
 `content = true` also stores prompts, responses and tool input and output. The
 collector masks common token formats before they are stored, but that is best
