@@ -1,0 +1,4 @@
+interface:
+  display_name: "Review PR"
+  short_description: "Council review of PRs, posted as inline comments on go"
+  default_prompt: "Use $review-pr to review these PRs and show me the findings before posting."

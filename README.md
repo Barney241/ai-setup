@@ -21,6 +21,7 @@ sentence: "modernize #123, sol loop, full stop".
 | `full-stop` | "full stop" | Same as `full-send`, but stops when the PR is ready for you to merge. |
 | `sol-loop` | "sol loop" / "soul loop" | GPT Sol reviews the change in a loop until both agree. 3 rounds, 5 for security or data loss. |
 | `council` | "council" | Claude Opus, GPT Sol and Gemini Pro review; loops until they agree; scores go in the PR. |
+| `review-pr` | "review pr", PR links | Council reviews PRs; findings shown first, then posted as one inline comment per finding on the affected lines. |
 | `prove` | "prove it", "verify" | Evidence the change works: reproduce, fail-on-base, the running app, screenshots. |
 | `precision-review` | "precision review" | The review contract every reviewer works to: evidence, severity and effort, scope. |
 | `file-pr` | "file a PR" | Short PR that leads with the problem. Repo preflight from `.agents/ai-setup.md`. |
