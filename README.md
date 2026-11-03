@@ -97,7 +97,12 @@ T3 Code ─────┘                           redacts, drops noise       
 The dashboard runs on the server at `http://<host>:8125`, on all interfaces.
 It compares this period with the last, scores cache hits, tool failures, first
 token latency and API errors against starting targets, and shows where the time
-went, the biggest blockers, spending by project and every task. Filter by range,
+went, the biggest blockers, spending by project and every task. It has four
+pages. Overview shows spend and tokens per agent against the previous period.
+Reliability shows tool failures with their real error text, guard blocks,
+permission decisions and how far the failure and T3 title hooks have spread per
+host. Tasks is titled by the T3 thread when the host reports one. Fleet shows
+hosts and T3 runs. Filter by range,
 project, host or agent. Click a blocker for each run, or a task for its timeline
 of prompts, model calls and tools. Filters and timelines live in the page URL,
 so a view can be shared. Its queries are in

@@ -8,196 +8,261 @@
 <style>
 :root {
   color-scheme: dark;
-  --page: #111113;
-  --surface: #18191b;
-  --surface-raised: #212225;
-  --surface-hover: #272a2d;
-  --line: #2e3135;
-  --line-strong: #43484e;
-  --text-primary: #edeef0;
-  --text-secondary: #b0b4ba;
-  --text-muted: #8b8d98;
+  --page: #09090b;
+  --surface: #101113;
+  --surface-2: #17181b;
+  --surface-3: #1f2023;
+  --line: #1e2023;
+  --line-strong: #2c2e33;
+  --text: #ededef;
+  --text-2: #a1a1aa;
+  --muted: #71717a;
   --accent: #70b8ff;
-  --series-claude: #3987e5;
-  --series-codex: #d95926;
-  --series-previous: #696e77;
+  --claude: #d95926;
+  --codex: #3987e5;
+  --previous: #696e77;
   --time-model: #199e70;
   --time-tools: #c98500;
   --time-wait: #9085e9;
-  --status-good: #71d083;
-  --status-watch: #ffca16;
-  --status-poor: #ff9592;
+  --good: #71d083;
+  --watch: #ffca16;
+  --poor: #ff9592;
 }
 * { box-sizing: border-box; }
-body { margin: 0; background: var(--page); color: var(--text-primary); font: 14px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
-main { max-width: 1320px; margin: 0 auto; padding: 20px 20px 56px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; transition: opacity 120ms; }
-main.loading { opacity: 0.6; }
-header { display: flex; flex-wrap: wrap; gap: 4px 16px; align-items: baseline; justify-content: space-between; }
-h1 { font-size: 18px; font-weight: 600; margin: 0; }
-h2 { font-size: 14px; font-weight: 600; margin: 0; }
-h3 { font-size: 12px; font-weight: 500; color: var(--text-muted); margin: 0 0 8px; }
+body { margin: 0; background: var(--page); color: var(--text); font: 14px/1.45 Inter, system-ui, -apple-system, "Segoe UI", sans-serif; -webkit-font-smoothing: antialiased; }
 button, select, input { font: inherit; color: inherit; }
-.muted { color: var(--text-muted); font-size: 12px; }
-.note { color: var(--text-muted); font-size: 12px; margin: 2px 0 12px; }
-.filters { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; position: sticky; top: 0; z-index: 2; background: var(--page); padding: 8px 0; }
-.segmented { display: inline-flex; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
-.segmented button { border: 0; background: var(--surface); color: var(--text-secondary); padding: 0 12px; min-height: 32px; cursor: pointer; }
-.segmented button + button { border-left: 1px solid var(--line); }
-.segmented button:hover { background: var(--surface-hover); }
-.segmented button[aria-pressed="true"] { background: var(--surface-raised); color: var(--text-primary); font-weight: 600; }
-select, input[type="search"] { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; min-height: 32px; padding: 0 8px; color: var(--text-secondary); max-width: 220px; }
-.ghost { background: none; border: 0; color: var(--accent); cursor: pointer; padding: 0 4px; min-height: 32px; }
-:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
-.banner { border: 1px solid var(--line-strong); background: var(--surface); padding: 8px 12px; border-radius: 6px; color: var(--text-secondary); font-size: 13px; }
-.group { display: grid; gap: 8px; }
-.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 8px; }
-.tile, .panel { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; min-width: 0; }
-.tile { padding: 12px 14px; display: grid; gap: 2px; align-content: start; }
-.tile .top { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
-.tile .label { color: var(--text-secondary); font-size: 12px; }
-.tile .value { font-size: 24px; font-weight: 600; }
-.tile .row { display: flex; justify-content: space-between; align-items: end; gap: 8px; min-height: 28px; }
-.tile .hint { color: var(--text-muted); font-size: 12px; margin-top: 4px; }
-.delta { font-size: 12px; color: var(--text-secondary); }
-.delta.better { color: var(--status-good); }
-.delta.worse { color: var(--status-poor); }
-.status { font-size: 12px; white-space: nowrap; color: var(--text-muted); }
-.status.good { color: var(--status-good); }
-.status.watch { color: var(--status-watch); }
-.status.poor { color: var(--status-poor); }
+button { cursor: pointer; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.app { display: grid; grid-template-columns: 248px minmax(0, 1fr); min-height: 100vh; }
+.side { position: sticky; top: 0; height: 100vh; padding: 22px 12px; display: flex; flex-direction: column; gap: 28px; }
+.brand { display: flex; align-items: center; gap: 12px; padding: 0 10px; font-weight: 700; font-size: 17px; letter-spacing: -0.01em; }
+.brand i { width: 36px; height: 36px; border-radius: 10px; background: var(--surface-2); border: 1px solid var(--line-strong); display: grid; place-items: center; }
+.nav { display: grid; gap: 4px; }
+.nav button { display: flex; align-items: center; gap: 12px; border: 0; background: none; color: var(--text-2); padding: 11px 12px; border-radius: 10px; text-align: left; font-size: 14px; }
+.nav button:hover { background: var(--surface); color: var(--text); }
+.nav button[aria-current="page"] { background: var(--surface-3); color: var(--text); font-weight: 600; }
+.nav svg, .icon { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+.side-foot { margin-top: auto; padding: 0 12px; color: var(--muted); font-size: 12px; }
+main { padding: 34px 40px 64px; min-width: 0; display: grid; gap: 20px; align-content: start; transition: opacity 120ms; }
+main.loading { opacity: 0.6; }
+.top { display: flex; flex-wrap: wrap; gap: 12px; justify-content: space-between; align-items: center; }
+h1 { font-size: 30px; font-weight: 650; letter-spacing: -0.02em; margin: 0; display: inline; }
+.sub { color: var(--muted); margin-left: 14px; font-size: 14px; }
+h2 { font-size: 15px; font-weight: 600; margin: 0; }
+.note { color: var(--muted); font-size: 12.5px; margin: 3px 0 14px; max-width: 78ch; }
+.btn { display: inline-flex; align-items: center; gap: 8px; background: var(--surface-2); border: 1px solid var(--line-strong); border-radius: 10px; padding: 0 16px; min-height: 40px; color: var(--text); }
+.btn:hover { background: var(--surface-3); }
+.btn.primary { background: #f4f4f5; color: #111; border-color: #f4f4f5; font-weight: 600; }
+.btn.primary:hover { background: #fff; }
+.controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.pills, .segmented { display: inline-flex; gap: 4px; padding: 4px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; }
+.pills button, .segmented button { border: 0; background: none; color: var(--text-2); padding: 0 14px; min-height: 34px; border-radius: 9px; display: inline-flex; align-items: center; gap: 8px; }
+.pills button:hover, .segmented button:hover { background: var(--surface-2); color: var(--text); }
+.pills button[aria-pressed="true"], .segmented button[aria-pressed="true"] { background: var(--surface-3); color: var(--text); font-weight: 600; }
+.dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; background: var(--previous); }
+.field { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; min-height: 42px; padding: 0 12px; color: var(--text-2); max-width: 220px; }
+input[type="search"].field { max-width: 260px; }
+.ghost { background: none; border: 0; color: var(--accent); padding: 0 6px; min-height: 34px; }
+.banner { border: 1px solid var(--line-strong); background: var(--surface); padding: 10px 14px; border-radius: 12px; color: var(--text-2); font-size: 13px; }
+.banner.error { border-color: #5a2a2a; color: var(--poor); }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 22px 24px; min-width: 0; }
+.hero-name { display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 15px; }
+.hero-name span { color: var(--muted); font-weight: 400; font-size: 13px; }
+.hero-main { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 18px 32px; align-items: flex-end; margin: 10px 0 8px; }
+.big { font-size: 58px; line-height: 1; font-weight: 650; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
+.big small { font-size: 14px; font-weight: 400; color: var(--muted); letter-spacing: 0; margin-left: 8px; }
+.stats { display: flex; flex-wrap: wrap; gap: 14px 34px; }
+.stat { display: grid; gap: 3px; min-width: 70px; }
+.stat span { color: var(--muted); font-size: 12.5px; }
+.stat strong { font-size: 15px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; }
+.tile { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 16px 18px; display: grid; gap: 4px; align-content: start; min-width: 0; }
+.tile .label { color: var(--muted); font-size: 12.5px; display: flex; justify-content: space-between; gap: 8px; }
+.tile .value { font-size: 28px; font-weight: 650; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+.tile .row { display: flex; justify-content: space-between; align-items: end; gap: 8px; min-height: 26px; }
+.tile .hint { color: var(--muted); font-size: 12px; }
+.delta { font-size: 12px; color: var(--text-2); }
+.delta.better { color: var(--good); }
+.delta.worse { color: var(--poor); }
+.status { white-space: nowrap; }
+.status.good { color: var(--good); }
+.status.watch { color: var(--watch); }
+.status.poor { color: var(--poor); }
 .spark { width: 72px; height: 24px; flex: none; }
-.panel { padding: 14px 16px; }
-.panel-head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; align-items: start; }
-.columns { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(480px, 100%), 1fr)); gap: 16px; min-width: 0; }
-.chart { position: relative; }
-.chart svg { display: block; width: 100%; height: 260px; }
-.chart svg .band { fill: transparent; outline: none; }
-.chart svg .band:hover, .chart svg .band:focus { fill: rgba(255, 255, 255, 0.04); }
-.legend { display: flex; flex-wrap: wrap; gap: 4px 16px; color: var(--text-secondary); font-size: 12px; margin: 4px 0 8px; }
-.legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 6px; }
-.legend i.line { height: 0; width: 14px; border-top: 2px solid; border-radius: 0; vertical-align: middle; }
-.tooltip { position: absolute; pointer-events: none; background: var(--surface-raised); border: 1px solid var(--line-strong); border-radius: 6px; padding: 6px 8px; font-size: 12px; white-space: nowrap; font-variant-numeric: tabular-nums; z-index: 1; }
-.tooltip strong { font-weight: 600; }
-.tooltip i { display: inline-block; width: 10px; height: 0; border-top: 2px solid; margin-right: 6px; vertical-align: middle; }
-.segments { display: flex; gap: 2px; height: 28px; margin: 8px 0; }
-.segments div { border-radius: 4px; color: #fff; font-size: 12px; padding: 0 8px; display: flex; align-items: center; white-space: nowrap; min-width: 0; }
+.columns { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(520px, 100%), 1fr)); gap: 20px; min-width: 0; }
+.chart { position: relative; margin-top: 8px; }
+.chart svg { display: block; width: 100%; overflow: visible; }
+.chart text { fill: var(--muted); font-size: 11.5px; font-family: inherit; }
+.tooltip { position: absolute; pointer-events: none; background: var(--surface-3); border: 1px solid var(--line-strong); border-radius: 10px; padding: 8px 10px; font-size: 12px; white-space: nowrap; font-variant-numeric: tabular-nums; z-index: 2; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45); display: grid; gap: 3px; }
+.tooltip b { font-weight: 600; }
+.tooltip i { display: inline-block; width: 9px; height: 9px; border-radius: 3px; margin-right: 7px; }
+.legend { display: flex; flex-wrap: wrap; gap: 4px 20px; color: var(--text-2); font-size: 12.5px; margin-top: 10px; }
+.legend i { display: inline-block; width: 14px; margin-right: 7px; vertical-align: middle; border-top: 2px solid; }
+.legend i.dashed { border-top-style: dashed; }
+.legend i.block { width: 10px; height: 10px; border: 0; border-radius: 3px; }
+.segments { display: flex; gap: 2px; height: 34px; margin: 10px 0; }
+.segments div { border-radius: 6px; color: #fff; font-size: 12px; padding: 0 10px; display: flex; align-items: center; white-space: nowrap; min-width: 0; overflow: hidden; }
 .scroll { overflow-x: auto; }
 table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; }
-th { text-align: left; color: var(--text-muted); font-weight: 500; font-size: 12px; padding: 4px 12px 4px 0; border-bottom: 1px solid var(--line); white-space: nowrap; }
-th button { background: none; border: 0; padding: 0; color: inherit; cursor: pointer; }
-th[aria-sort] button { color: var(--text-primary); }
-td { padding: 6px 12px 6px 0; border-bottom: 1px solid var(--line); vertical-align: top; }
-td.number, th.number { text-align: right; white-space: nowrap; }
+th { text-align: left; color: var(--muted); font-weight: 500; font-size: 12px; padding: 6px 14px 8px 0; border-bottom: 1px solid var(--line); white-space: nowrap; }
+th button { background: none; border: 0; padding: 0; color: inherit; }
+th[aria-sort] button { color: var(--text); }
+td { padding: 10px 14px 10px 0; border-bottom: 1px solid var(--line); vertical-align: top; }
+td.number, th.number { text-align: right; white-space: nowrap; padding-right: 0; padding-left: 14px; }
 td.wide { min-width: 240px; overflow-wrap: anywhere; }
 tr.clickable { cursor: pointer; }
-tr.clickable:hover td { background: var(--surface-hover); }
-.link { background: none; border: 0; padding: 0; color: var(--text-primary); text-align: left; cursor: pointer; overflow-wrap: anywhere; }
+tr.clickable:hover td { background: var(--surface-2); }
+.link { background: none; border: 0; padding: 0; color: var(--text); text-align: left; overflow-wrap: anywhere; }
 .link:hover { color: var(--accent); }
-.bar { height: 4px; margin-top: 4px; border-radius: 0 2px 2px 0; background: var(--series-claude); min-width: 2px; }
-.empty { color: var(--text-muted); padding: 12px 0; }
-details summary { color: var(--text-muted); font-size: 12px; cursor: pointer; margin-top: 8px; }
-dialog { background: var(--surface); color: var(--text-primary); border: 1px solid var(--line-strong); border-radius: 8px 0 0 8px; padding: 0; margin: 0 0 0 auto; height: 100dvh; max-height: 100dvh; width: min(860px, 100vw); max-width: 100vw; }
-dialog::backdrop { background: rgba(0, 0, 0, 0.55); }
-.drawer-head { position: sticky; top: 0; background: var(--surface); border-bottom: 1px solid var(--line); padding: 14px 16px; display: flex; justify-content: space-between; gap: 12px; align-items: start; z-index: 1; }
-.drawer-body { padding: 14px 16px; display: grid; gap: 14px; }
+.mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; color: var(--text-2); overflow-wrap: anywhere; }
+.chip { display: inline-block; font-size: 11px; padding: 1px 7px; border-radius: 999px; background: var(--surface-3); color: var(--text-2); margin-left: 8px; vertical-align: middle; }
+.small { color: var(--muted); font-size: 12px; }
+.nowrap { white-space: nowrap; }
+.bar { height: 4px; margin-top: 6px; border-radius: 0 2px 2px 0; background: var(--accent); min-width: 2px; }
+.empty { color: var(--muted); padding: 14px 0; }
+[hidden] { display: none !important; }
+dialog { background: var(--surface); color: var(--text); border: 1px solid var(--line-strong); border-radius: 16px 0 0 16px; padding: 0; margin: 0 0 0 auto; height: 100dvh; max-height: 100dvh; width: min(860px, 100vw); max-width: 100vw; }
+dialog::backdrop { background: rgba(0, 0, 0, 0.6); }
+.drawer-head { position: sticky; top: 0; background: var(--surface); border-bottom: 1px solid var(--line); padding: 16px 20px; display: flex; justify-content: space-between; gap: 12px; align-items: start; z-index: 1; }
+.drawer-body { padding: 16px 20px; display: grid; gap: 16px; }
 .facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 8px; }
-.facts div { background: var(--surface-raised); border-radius: 6px; padding: 8px 10px; }
-.facts strong { display: block; font-size: 16px; font-weight: 600; }
-.step { display: grid; grid-template-columns: 62px 78px minmax(0, 1fr) 96px; gap: 8px; padding: 6px 0; border-bottom: 1px solid var(--line); font-size: 13px; }
-.step .time, .step .kind { color: var(--text-muted); font-size: 12px; }
-.step .text { color: var(--text-secondary); font-size: 12px; overflow-wrap: anywhere; white-space: pre-wrap; margin: 2px 0 0; font-family: ui-monospace, monospace; max-height: 7.5em; overflow-y: auto; }
-.step.prompt .text { color: var(--text-primary); font-family: inherit; font-size: 13px; }
-.step .amount { text-align: right; font-variant-numeric: tabular-nums; color: var(--text-secondary); font-size: 12px; }
-.step.failed .kind { color: var(--status-poor); }
+.facts div { background: var(--surface-2); border-radius: 10px; padding: 10px 12px; color: var(--muted); font-size: 12px; }
+.facts strong { display: block; font-size: 16px; font-weight: 600; color: var(--text); }
+.step { display: grid; grid-template-columns: 62px 78px minmax(0, 1fr) 96px; gap: 8px; padding: 7px 0; border-bottom: 1px solid var(--line); font-size: 13px; }
+.step .time, .step .kind { color: var(--muted); font-size: 12px; }
+.step .text { color: var(--text-2); font-size: 12px; overflow-wrap: anywhere; white-space: pre-wrap; margin: 2px 0 0; font-family: ui-monospace, monospace; max-height: 7.5em; overflow-y: auto; }
+.step.prompt .text { color: var(--text); font-family: inherit; font-size: 13px; }
+.step .amount { text-align: right; color: var(--text-2); font-size: 12px; font-variant-numeric: tabular-nums; }
+.step.failed .kind { color: var(--poor); }
+@media (max-width: 900px) {
+  .app { grid-template-columns: 1fr; }
+  .side { position: static; height: auto; flex-direction: row; flex-wrap: wrap; align-items: center; padding: 14px 16px 0; gap: 12px; }
+  .nav { display: flex; flex-wrap: wrap; }
+  .side-foot { display: none; }
+  main { padding: 18px 16px 48px; }
+  .big { font-size: 44px; }
+}
 @media (max-width: 560px) { .step { grid-template-columns: 62px minmax(0, 1fr) 72px; } .step .kind { display: none; } }
 </style>
 </head>
 <body>
-<main id="main">
-  <header>
-    <h1>Fleet agents</h1>
-    <span class="muted" id="freshness"></span>
-  </header>
-  <nav class="filters" aria-label="Filters">
-    <div class="segmented" id="ranges" role="group" aria-label="Time range"></div>
-    <select id="filter-project" aria-label="Project"></select>
-    <select id="filter-host" aria-label="Host"></select>
-    <select id="filter-agent" aria-label="Agent"></select>
-    <button class="ghost" id="clear" hidden>Clear filters</button>
-  </nav>
-  <div id="error" hidden class="banner" role="alert"></div>
-  <div id="coverage" hidden class="banner"></div>
-  <section class="group" aria-label="Cost and volume">
-    <h3>Cost and volume</h3>
-    <div class="tiles" id="tiles-cost"></div>
-  </section>
-  <section class="group" aria-label="Health">
-    <h3>Health. Targets are starting defaults, not industry standards</h3>
-    <div class="tiles" id="tiles-health"></div>
-  </section>
-  <section class="group" aria-label="Output and autonomy">
-    <h3>Output and autonomy</h3>
-    <div class="tiles" id="tiles-output"></div>
-  </section>
-  <section class="panel">
-    <div class="panel-head">
-      <div>
-        <h2 id="trend-title"></h2>
-        <p class="note" id="trend-note"></p>
-      </div>
-      <div class="segmented" id="trend-metric" role="group" aria-label="Chart metric"></div>
+<div class="app">
+  <aside class="side">
+    <div class="brand"><i><svg class="icon" viewBox="0 0 24 24" id="brand-icon"></svg></i>fleet</div>
+    <nav class="nav" id="nav" aria-label="Pages"></nav>
+    <div class="side-foot" id="freshness"></div>
+  </aside>
+  <main id="main">
+    <div class="top">
+      <div><h1 id="page-title"></h1><span class="sub" id="page-sub"></span></div>
+      <button class="btn primary" id="refresh"><svg class="icon" viewBox="0 0 24 24" id="refresh-icon"></svg>Refresh</button>
     </div>
-    <div class="legend" id="legend"></div>
-    <div class="chart" id="trend"></div>
-    <details><summary>Show as table</summary><div class="scroll" id="trend-table"></div></details>
-  </section>
-  <section class="panel">
-    <h2>Where the time went</h2>
-    <p class="note">Measured time inside model calls, tools and permission prompts. Claude reports all three; Codex reports tools only.</p>
-    <div class="segments" id="time-bar"></div>
-    <div class="legend" id="time-legend"></div>
-  </section>
-  <div class="columns">
-    <section class="panel">
-      <h2>Biggest blockers</h2>
-      <p class="note">Ranked by total time. Commands are grouped by their first two words. Click a row for each run.</p>
-      <div class="scroll" id="blockers"></div>
-    </section>
-    <section class="panel">
-      <h2>Spending by project</h2>
-      <p class="note">Dollars are Claude's API-equivalent estimate, not your subscription cost; Codex reports none. Click a project to filter.</p>
-      <div class="scroll" id="projects"></div>
-    </section>
-  </div>
-  <section class="panel">
-    <div class="panel-head">
-      <div>
-        <h2>Tasks</h2>
-        <p class="note">One session is one task, titled by its first prompt. Click a task for its timeline.</p>
-      </div>
-      <input type="search" id="task-search" placeholder="Search tasks" aria-label="Search tasks">
+    <div class="pills" id="agents" role="group" aria-label="Agent"></div>
+    <div class="controls">
+      <div class="segmented" id="ranges" role="group" aria-label="Time range"></div>
+      <div class="segmented" id="metrics" role="group" aria-label="Chart metric"></div>
+      <select class="field" id="filter-project" aria-label="Project"></select>
+      <select class="field" id="filter-host" aria-label="Host"></select>
+      <button class="ghost" id="clear" hidden>Clear filters</button>
     </div>
-    <div class="scroll" id="tasks"></div>
-  </section>
-  <div class="columns">
-    <section class="panel">
-      <h2>Models</h2>
-      <p class="note">Cache hit is the share of input tokens read from cache. TTFT is the time to the first token.</p>
-      <div class="scroll" id="models"></div>
+    <div id="error" hidden class="banner error" role="alert"></div>
+
+    <section data-page="overview" hidden>
+      <div class="tiles" id="tiles"></div>
     </section>
-    <section class="panel">
-      <h2>Fleet</h2>
-      <p class="note">Every host and agent, ignoring filters. T3 runs cover the selected days and include sessions that do not export telemetry.</p>
-      <div class="scroll" id="fleet"></div>
-      <div class="scroll" id="t3"></div>
+    <section data-page="overview" id="heroes" hidden style="display:grid;gap:20px"></section>
+    <section data-page="overview" class="card" hidden>
+      <h2>Where the time went</h2>
+      <p class="note">Measured time inside model calls, tools and permission prompts. Claude reports all three; Codex reports tools only.</p>
+      <div class="segments" id="time-bar"></div>
+      <div class="legend" id="time-legend"></div>
     </section>
-  </div>
-</main>
+    <div class="columns" data-page="overview" hidden>
+      <section class="card">
+        <h2>Spending by project</h2>
+        <p class="note">Dollars are Claude's API-equivalent estimate, not your subscription cost; Codex reports none. Click a project to filter.</p>
+        <div class="scroll" id="projects"></div>
+      </section>
+      <section class="card">
+        <h2>Models</h2>
+        <p class="note">Cache hit is the share of input tokens read from cache. TTFT is the time to the first token.</p>
+        <div class="scroll" id="models"></div>
+      </section>
+    </div>
+
+    <section data-page="reliability" hidden><div class="tiles" id="reliability-tiles"></div></section>
+    <div class="columns" data-page="reliability" hidden>
+      <section class="card">
+        <h2>Tool failures per day</h2>
+        <p class="note">The lighter line counts failures whose real error text was captured, so it shows how far the new failure hook has spread.</p>
+        <div class="chart" id="failure-chart"></div>
+        <div class="legend" id="failure-legend"></div>
+      </section>
+      <section class="card">
+        <h2>Permission decisions per day</h2>
+        <p class="note" id="decisions-note"></p>
+        <div class="chart" id="decision-chart"></div>
+        <div class="legend" id="decision-legend"></div>
+      </section>
+    </div>
+    <section data-page="reliability" class="card" hidden>
+      <h2>Top failures</h2>
+      <p class="note">Grouped by tool and the first line of the error, with long numbers masked.</p>
+      <div class="scroll" id="failures"></div>
+    </section>
+    <div class="columns" data-page="reliability" hidden>
+      <section class="card">
+        <h2>Guard blocks</h2>
+        <p class="note">Commands the secret and papercuts guards refused.</p>
+        <div class="scroll" id="hook-blocks"></div>
+      </section>
+      <section class="card">
+        <h2>Biggest blockers</h2>
+        <p class="note">Ranked by total time. Commands are grouped by their first two words. Click a row for each run.</p>
+        <div class="scroll" id="blockers"></div>
+      </section>
+    </div>
+    <section data-page="reliability" class="card" hidden>
+      <h2>Recent failures</h2>
+      <p class="note">Newest first, with the session's T3 title when the host reports one. Click a row for the session timeline.</p>
+      <div class="scroll" id="recent-failures"></div>
+    </section>
+    <section data-page="reliability" class="card" hidden>
+      <h2>Collection coverage</h2>
+      <p class="note">Share of failures carrying real error text and of sessions carrying a T3 title, per host. Sessions started before a host picked up the new hooks stay at zero.</p>
+      <div class="scroll" id="coverage"></div>
+    </section>
+
+    <section data-page="tasks" class="card" hidden>
+      <div class="top">
+        <div>
+          <h2>Tasks</h2>
+          <p class="note">One session is one task, titled by its T3 thread when there is one, otherwise by its first prompt. Click a task for its timeline.</p>
+        </div>
+        <input type="search" class="field" id="task-search" placeholder="Search tasks" aria-label="Search tasks">
+      </div>
+      <div class="scroll" id="tasks"></div>
+    </section>
+
+    <div class="columns" data-page="fleet" hidden>
+      <section class="card">
+        <h2>Hosts</h2>
+        <p class="note">Every host and agent, ignoring filters.</p>
+        <div class="scroll" id="fleet"></div>
+      </section>
+      <section class="card">
+        <h2>T3 runs</h2>
+        <p class="note">Runs in the selected days, including sessions that do not export telemetry.</p>
+        <div class="scroll" id="t3"></div>
+      </section>
+    </div>
+  </main>
+</div>
 <dialog id="drawer" aria-labelledby="drawer-title">
   <div class="drawer-head">
     <div>
       <h2 id="drawer-title"></h2>
-      <div class="muted" id="drawer-subtitle"></div>
+      <div class="small" id="drawer-subtitle"></div>
     </div>
     <button class="ghost" id="drawer-close">Close</button>
   </div>
@@ -206,28 +271,42 @@ dialog::backdrop { background: rgba(0, 0, 0, 0.55); }
 <script>
 const RANGES = [7, 14, 30];
 const MIN_SAMPLE = 20;
+const PAGES = [
+  { id: "overview", label: "Overview", icon: ["M3 3h7v7H3z", "M14 3h7v7h-7z", "M14 14h7v7h-7z", "M3 14h7v7H3z"], sub: "Spend, tokens and health across the fleet" },
+  { id: "reliability", label: "Reliability", icon: ["M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z", "M9 12l2 2 4-4"], sub: "Failures, guard blocks and permission decisions" },
+  { id: "tasks", label: "Tasks", icon: ["M8 6h13", "M8 12h13", "M8 18h13", "M3 6h.01", "M3 12h.01", "M3 18h.01"], sub: "One row per session" },
+  { id: "fleet", label: "Fleet", icon: ["M4 5h16v6H4z", "M4 13h16v6H4z", "M8 8h.01", "M8 16h.01"], sub: "Hosts, agents and T3 runs" },
+];
+const AGENTS = [["", "All", "var(--previous)"], ["claude", "Claude", "var(--claude)"], ["codex", "Codex", "var(--codex)"]];
+const AGENT_COLORS = { claude: "var(--claude)", codex: "var(--codex)" };
+const METRICS = {
+  tokens: { label: "Tokens", field: "tokens", format: formatCount },
+  api_usd: { label: "Spend", field: "api_usd", format: formatUsd },
+  tasks: { label: "Tasks", field: "tasks", format: formatCount },
+};
 const KIND_LABELS = { command: "command", tool: "tool", permission: "permission wait", api_error: "API error" };
 const STEP_LABELS = { prompt: "prompt", response: "reply", model: "model", tool: "tool", wait: "waiting", error: "API error" };
 const STATUS_LABELS = { good: "✓ Good", watch: "! Watch", poor: "✕ Poor" };
-const AGENT_SERIES = [["claude", "Claude", "var(--series-claude)"], ["codex", "Codex", "var(--series-codex)"]];
-const TREND_METRICS = {
-  tokens: { label: "Tokens", field: "tokens", format: formatCount },
-  usd: { label: "Spend", field: "api_usd", format: formatUsd },
-};
+const DECISION_SERIES = [
+  ["you_approved", "You approved", "#3987e5"],
+  ["hook_blocked", "Blocked by a guard", "#e66767"],
+  ["rejected", "Rejected", "#9085e9"],
+];
 
 const initial = new URLSearchParams(location.search);
 const state = {
+  page: PAGES.some((page) => page.id === location.hash.slice(1)) ? location.hash.slice(1) : "overview",
   days: RANGES.includes(Number(initial.get("days"))) ? Number(initial.get("days")) : 7,
   project: initial.get("project") ?? "",
   host: initial.get("host") ?? "",
   agent: initial.get("agent") ?? "",
   session: initial.get("session") ?? "",
-  trendMetric: "tokens",
+  metric: "tokens",
   taskSearch: "",
 };
 const tableSorts = new Map();
-let latestDaily = [];
 let latestTasks = [];
+let chartCounter = 0;
 
 const compact = new Intl.NumberFormat("en", { notation: "compact", maximumFractionDigits: 1 });
 
@@ -247,8 +326,12 @@ function formatSeconds(value) {
   return value >= 60 ? formatMinutes(value / 60) : `${value.toFixed(1)} s`;
 }
 function formatPercent(value) { return value == null ? "–" : `${(value * 100).toFixed(1)}%`; }
-function formatRatio(value) { return value == null ? "–" : value.toFixed(1); }
 function ratio(part, whole) { return whole ? part / whole : null; }
+function sum(rows, field) { return rows.reduce((total, row) => total + (row[field] ?? 0), 0); }
+function shortDay(day) {
+  const [, month, date] = day.split("-");
+  return `${Number(month)}/${Number(date)}`;
+}
 
 function element(tag, properties = {}, ...children) {
   const node = Object.assign(document.createElement(tag), properties);
@@ -260,6 +343,10 @@ function svgNode(tag, attributes = {}) {
   const node = document.createElementNS("http://www.w3.org/2000/svg", tag);
   Object.entries(attributes).forEach(([name, value]) => node.setAttribute(name, value));
   return node;
+}
+
+function drawIcon(svg, paths) {
+  svg.replaceChildren(...paths.map((d) => svgNode("path", { d })));
 }
 
 function scopeParams(extra = {}) {
@@ -278,7 +365,7 @@ async function panel(name, extra) {
 function syncUrl() {
   const params = scopeParams();
   if (state.session) params.set("session", state.session);
-  history.replaceState(null, "", `?${params}`);
+  history.replaceState(null, "", `?${params}#${state.page}`);
 }
 
 function bandStatus(value, sample, good, poor) {
@@ -292,7 +379,7 @@ function bandStatus(value, sample, good, poor) {
 }
 
 function deltaNode(current, previous, better, usePoints) {
-  if (current == null || previous == null) return element("span", { className: "delta muted", textContent: "no earlier data" });
+  if (current == null || previous == null) return element("span", { className: "delta", textContent: "no earlier data" });
   const difference = current - previous;
   if (difference === 0) return element("span", { className: "delta", textContent: "■ no change" });
   const arrow = difference > 0 ? "▲" : "▼";
@@ -300,7 +387,7 @@ function deltaNode(current, previous, better, usePoints) {
     : previous === 0 ? "from 0" : `${Math.abs((difference / previous) * 100).toFixed(0)}%`;
   const improved = better === "up" ? difference > 0 : difference < 0;
   const tone = better ? (improved ? "better" : "worse") : "";
-  return element("span", { className: `delta ${tone}`, textContent: `${arrow} ${size}` });
+  return element("span", { className: `delta ${tone}`, textContent: `${arrow} ${size} vs before` });
 }
 
 function sparkline(values) {
@@ -311,17 +398,17 @@ function sparkline(values) {
   const y = (value) => 21 - ((value - floor) / range) * 18;
   const svg = svgNode("svg", { class: "spark", viewBox: "0 0 72 24", "aria-hidden": "true" });
   const points = values.map((value, index) => value == null ? null : `${x(index)},${y(value)}`).filter(Boolean).join(" ");
-  svg.append(svgNode("polyline", { points, fill: "none", stroke: "var(--series-previous)", "stroke-width": 2, "stroke-linejoin": "round", "stroke-linecap": "round" }));
+  svg.append(svgNode("polyline", { points, fill: "none", stroke: "var(--previous)", "stroke-width": 2, "stroke-linejoin": "round", "stroke-linecap": "round" }));
   return svg;
 }
 
 function tile({ label, value, current, previous, better, points, status, hint, spark }) {
-  const top = element("div", { className: "top" }, element("span", { className: "label", textContent: label }));
+  const top = element("div", { className: "label" }, element("span", { textContent: label }));
   if (status) top.append(element("span", { className: `status ${status.tone}`, textContent: status.text }));
   return element("div", { className: "tile" },
     top,
     element("div", { className: "value", textContent: value }),
-    element("div", { className: "row" }, deltaNode(current, previous, better, points), spark ?? document.createTextNode("")),
+    element("div", { className: "row" }, current === undefined ? element("span") : deltaNode(current, previous, better, points), spark ?? document.createTextNode("")),
     element("div", { className: "hint", textContent: hint ?? "" }));
 }
 
@@ -334,8 +421,228 @@ function dayList(count, endOffset) {
   });
 }
 
-function dailySeries(rows, pick) {
-  return dayList(state.days, 0).map((day) => pick(rows.filter((row) => row.day === day)));
+function niceMax(value) {
+  if (value <= 0) return 1;
+  const power = 10 ** Math.floor(Math.log10(value));
+  const normalized = value / power;
+  return power * (normalized <= 1 ? 1 : normalized <= 2 ? 2 : normalized <= 5 ? 5 : 10);
+}
+
+function drawChart(host, spec) {
+  host._spec = spec;
+  host.replaceChildren();
+  const bars = spec.kind === "bars";
+  const width = Math.max(320, host.clientWidth);
+  const height = spec.height ?? 240;
+  const margin = { left: 52, right: 14, top: 12, bottom: 28 };
+  const innerWidth = width - margin.left - margin.right;
+  const innerHeight = height - margin.top - margin.bottom;
+  const count = spec.labels.length;
+  const stackTotals = bars ? spec.labels.map((_, index) => spec.series.reduce((total, line) => total + (line.values[index] ?? 0), 0)) : null;
+  const known = stackTotals ?? spec.series.flatMap((line) => line.values).filter((value) => value != null);
+  const top = niceMax(Math.max(0, ...known));
+  const x = (index) => bars ? margin.left + ((index + 0.5) * innerWidth) / count : margin.left + (count === 1 ? innerWidth / 2 : (index * innerWidth) / (count - 1));
+  const y = (value) => margin.top + innerHeight - (value / top) * innerHeight;
+  const id = `chart${chartCounter += 1}`;
+  const svg = svgNode("svg", { viewBox: `0 0 ${width} ${height}`, height, role: "img", "aria-label": spec.label ?? "Chart" });
+
+  const defs = svgNode("defs");
+  spec.series.forEach((line, index) => {
+    const gradient = svgNode("linearGradient", { id: `${id}-${index}`, x1: 0, y1: 0, x2: 0, y2: 1 });
+    gradient.append(svgNode("stop", { offset: "0%", "stop-color": line.color, "stop-opacity": 0.32 }), svgNode("stop", { offset: "100%", "stop-color": line.color, "stop-opacity": 0 }));
+    defs.append(gradient);
+  });
+  svg.append(defs);
+
+  [0, 0.5, 1].forEach((fraction) => {
+    const value = top * fraction;
+    svg.append(
+      svgNode("line", { x1: margin.left, x2: width - margin.right, y1: y(value), y2: y(value), stroke: "var(--line)", "stroke-width": 1 }),
+      Object.assign(svgNode("text", { x: margin.left - 10, y: y(value) + 4, "text-anchor": "end" }), { textContent: spec.format(value) }),
+    );
+  });
+  const step = Math.max(1, Math.ceil(count / Math.max(2, Math.floor(innerWidth / 64))));
+  spec.labels.forEach((label, index) => {
+    if (index % step !== 0 && index !== count - 1) return;
+    if (index === count - 1 && (count - 1) % step !== 0 && count - 1 - Math.floor((count - 1) / step) * step < step / 2) return;
+    svg.append(Object.assign(svgNode("text", { x: x(index), y: height - 8, "text-anchor": "middle" }), { textContent: shortDay(label) }));
+  });
+
+  if (bars) {
+    const slot = innerWidth / count;
+    const barWidth = Math.min(40, Math.max(6, slot * 0.64));
+    spec.labels.forEach((_, index) => {
+      let floor = 0;
+      spec.series.forEach((line) => {
+        const value = line.values[index] ?? 0;
+        if (!value) return;
+        const rectTop = y(floor + value);
+        const rectHeight = Math.max(1, y(floor) - rectTop - (floor > 0 ? 2 : 0));
+        svg.append(svgNode("rect", { x: x(index) - barWidth / 2, y: rectTop, width: barWidth, height: rectHeight, rx: 4, fill: line.color }));
+        floor += value;
+      });
+    });
+  } else {
+    spec.series.forEach((line, index) => {
+      const segments = [];
+      let current = [];
+      line.values.forEach((value, position) => {
+        if (value == null) { if (current.length) segments.push(current); current = []; return; }
+        current.push([x(position), y(value)]);
+      });
+      if (current.length) segments.push(current);
+      segments.forEach((points) => {
+        const path = points.map(([px, py], position) => `${position ? "L" : "M"}${px.toFixed(1)} ${py.toFixed(1)}`).join(" ");
+        if (line.area) svg.append(svgNode("path", { d: `${path} L${points.at(-1)[0].toFixed(1)} ${y(0)} L${points[0][0].toFixed(1)} ${y(0)} Z`, fill: `url(#${id}-${index})` }));
+        svg.append(svgNode("path", { d: path, fill: "none", stroke: line.color, "stroke-width": 2, "stroke-linejoin": "round", "stroke-linecap": "round", ...(line.dashed ? { "stroke-dasharray": "5 5" } : {}) }));
+        if (points.length === 1) svg.append(svgNode("circle", { cx: points[0][0], cy: points[0][1], r: 3, fill: line.color }));
+      });
+    });
+  }
+
+  const cursor = svgNode("line", { y1: margin.top, y2: margin.top + innerHeight, stroke: "var(--line-strong)", "stroke-width": 1, visibility: "hidden" });
+  const dots = spec.series.map((line) => svgNode("circle", { r: 4, fill: line.color, stroke: "var(--surface)", "stroke-width": 2, visibility: "hidden" }));
+  const tooltip = element("div", { className: "tooltip", hidden: true });
+  const hit = svgNode("rect", { x: margin.left, y: margin.top, width: innerWidth, height: innerHeight, fill: "transparent" });
+  svg.append(cursor, ...(bars ? [] : dots), hit);
+  hit.addEventListener("pointermove", (event) => {
+    const box = svg.getBoundingClientRect();
+    const pointerX = ((event.clientX - box.left) / box.width) * width;
+    const index = bars
+      ? Math.min(count - 1, Math.max(0, Math.floor(((pointerX - margin.left) / innerWidth) * count)))
+      : Math.min(count - 1, Math.max(0, Math.round(((pointerX - margin.left) / innerWidth) * (count - 1))));
+    cursor.setAttribute("x1", x(index));
+    cursor.setAttribute("x2", x(index));
+    cursor.setAttribute("visibility", "visible");
+    spec.series.forEach((line, position) => {
+      const value = line.values[index];
+      if (bars || value == null) { dots[position].setAttribute("visibility", "hidden"); return; }
+      dots[position].setAttribute("cx", x(index));
+      dots[position].setAttribute("cy", y(value));
+      dots[position].setAttribute("visibility", "visible");
+    });
+    tooltip.replaceChildren(
+      element("b", { textContent: spec.labels[index] }),
+      ...spec.series.map((line) => element("span", {}, element("i", { style: `background:${line.color}` }), `${line.name}: ${line.values[index] == null ? "–" : spec.format(line.values[index])}`)),
+    );
+    tooltip.hidden = false;
+    const left = (x(index) / width) * box.width;
+    tooltip.style.left = `${left > box.width * 0.62 ? left - tooltip.offsetWidth - 12 : left + 12}px`;
+    tooltip.style.top = "8px";
+  });
+  hit.addEventListener("pointerleave", () => {
+    cursor.setAttribute("visibility", "hidden");
+    dots.forEach((dot) => dot.setAttribute("visibility", "hidden"));
+    tooltip.hidden = true;
+  });
+  host.append(svg, tooltip);
+  if (!host._watching) {
+    host._watching = true;
+    new ResizeObserver(() => { if (host._spec && host.clientWidth !== host._width) { host._width = host.clientWidth; drawChart(host, host._spec); } }).observe(host);
+  }
+  host._width = host.clientWidth;
+}
+
+function legend(host, entries) {
+  host.replaceChildren(...entries.map(({ name, color, dashed, block }) => element("span", {}, element("i", { className: block ? "block" : dashed ? "dashed" : "", style: block ? `background:${color}` : `border-color:${color}` }), name)));
+}
+
+function renderTable(container, id, columns, rows, { onRow, empty = "Nothing to show." } = {}) {
+  if (!rows.length) { container.replaceChildren(element("div", { className: "empty", textContent: empty })); return; }
+  const sorted = [...rows];
+  const sort = tableSorts.get(id);
+  if (sort) {
+    const column = columns[sort.index];
+    sorted.sort((left, right) => {
+      const a = column.sort(left), b = column.sort(right);
+      return (typeof a === "string" ? a.localeCompare(b) : a - b) * sort.direction;
+    });
+  }
+  const head = element("tr", {}, ...columns.map((column, index) => {
+    const cell = element("th", { className: column.number ? "number" : "" });
+    if (!column.sort) { cell.textContent = column.title; return cell; }
+    const active = sort?.index === index;
+    if (active) cell.setAttribute("aria-sort", sort.direction === 1 ? "ascending" : "descending");
+    cell.append(element("button", {
+      textContent: column.title + (active ? (sort.direction === 1 ? " ▲" : " ▼") : ""),
+      onclick: () => { tableSorts.set(id, { index, direction: active ? -sort.direction : -1 }); renderTable(container, id, columns, rows, { onRow, empty }); },
+    }));
+    return cell;
+  }));
+  const body = sorted.map((row) => {
+    const tr = element("tr", {}, ...columns.map((column) => {
+      const cell = element("td", { className: [column.number ? "number" : "", column.wide ? "wide" : ""].join(" ").trim() });
+      const content = column.render(row);
+      cell.append(content instanceof Node ? content : String(content ?? ""));
+      return cell;
+    }));
+    if (onRow) { tr.className = "clickable"; tr.onclick = () => onRow(row); }
+    return tr;
+  });
+  container.replaceChildren(element("table", {}, element("thead", {}, head), element("tbody", {}, ...body)));
+}
+
+function noteText(text) { return element("div", { className: "small", textContent: text }); }
+
+function agentSlices(daily) {
+  const days = dayList(state.days, 0);
+  const before = dayList(state.days, state.days);
+  const agents = [...new Set(daily.map((row) => row.agent))].sort();
+  return agents.map((agent) => {
+    const mine = daily.filter((row) => row.agent === agent);
+    const lookup = (list, field) => list.map((day) => {
+      const rows = mine.filter((row) => row.day === day);
+      return rows.length ? sum(rows, field) : null;
+    });
+    const current = mine.filter((row) => days.includes(row.day));
+    const previous = mine.filter((row) => before.includes(row.day));
+    return { agent, days, before, current, previous, lookup, now: (field) => sum(current, field), then: (field) => sum(previous, field) };
+  });
+}
+
+function renderHeroes(daily) {
+  const metric = METRICS[state.metric];
+  const heroes = agentSlices(daily).map((slice) => {
+    const total = slice.now(metric.field);
+    const hasValue = slice.current.some((row) => row[metric.field] != null);
+    const weightedCache = sum(slice.current.map((row) => ({ value: (row.cache_hit ?? 0) * row.tokens })), "value");
+    const failureRate = ratio(slice.now("tool_failures"), slice.now("tool_calls"));
+    const color = AGENT_COLORS[slice.agent] ?? "var(--previous)";
+    const chart = element("div", { className: "chart" });
+    const card = element("section", { className: "card" },
+      element("div", { className: "hero-name" }, element("i", { className: "dot", style: `background:${color}` }), slice.agent[0].toUpperCase() + slice.agent.slice(1), element("span", { textContent: `${formatCount(slice.now("tasks"))} task-days` })),
+      element("div", { className: "hero-main" },
+        element("div", { className: "big" }, hasValue ? metric.format(total) : "–", element("small", { textContent: `${metric.label.toLowerCase()}, last ${state.days} days` })),
+        element("div", { className: "stats" },
+          stat("Previous period", slice.previous.length ? metric.format(slice.then(metric.field)) : "–"),
+          stat("Cache hit", formatPercent(ratio(weightedCache, slice.now("tokens")))),
+          stat("Tool failures", formatPercent(failureRate)),
+          stat("Tool calls", formatCount(slice.now("tool_calls"))))),
+      chart,
+      element("div", { className: "legend" },
+        element("span", {}, element("i", { style: `border-color:${color}` }), "This period"),
+        element("span", {}, element("i", { className: "dashed", style: "border-color:var(--previous)" }), "Previous period")));
+    slice.chart = chart;
+    slice.color = color;
+    return { card, slice };
+  });
+  document.getElementById("heroes").replaceChildren(...heroes.map(({ card }) => card));
+  if (!heroes.length) document.getElementById("heroes").replaceChildren(element("div", { className: "empty", textContent: "No requests in this window." }));
+  heroes.forEach(({ slice }) => {
+    drawChart(slice.chart, {
+      label: `${slice.agent} ${metric.label}`,
+      labels: slice.days,
+      format: metric.format,
+      series: [
+        { name: "Previous period", color: "#696e77", dashed: true, values: slice.lookup(slice.before, metric.field) },
+        { name: "This period", color: slice.color, area: true, values: slice.lookup(slice.days, metric.field) },
+      ],
+    });
+  });
+}
+
+function stat(label, value) {
+  return element("div", { className: "stat" }, element("span", { textContent: label }), element("strong", { textContent: value }));
 }
 
 function renderTiles(rows, daily) {
@@ -345,452 +652,350 @@ function renderTiles(rows, daily) {
   const failure = (row) => ratio(row.tool_failures, row.tool_calls);
   const errors = (row) => ratio(row.api_errors, row.requests);
   const perTask = (row) => row.api_usd == null ? null : ratio(row.api_usd, row.tasks);
-  const perPrompt = (row) => ratio(row.tool_calls, row.prompts);
   const oneShot = (row) => ratio(row.one_prompt_tasks, row.prompted_tasks);
-  const total = (field) => dailySeries(daily, (day) => day.length ? day.reduce((sum, row) => sum + (row[field] ?? 0), 0) : null);
-  const cacheSpark = dailySeries(daily, (day) => day.length ? day.reduce((sum, row) => sum + (row.cache_hit ?? 0) * row.tokens, 0) / day.reduce((sum, row) => sum + row.tokens, 0) : null);
-  const failureSpark = dailySeries(daily, (day) => ratio(day.reduce((sum, row) => sum + row.tool_failures, 0), day.reduce((sum, row) => sum + row.tool_calls, 0)));
-
-  document.getElementById("tiles-cost").replaceChildren(
+  const days = dayList(state.days, 0);
+  const total = (field) => days.map((day) => { const rowsOfDay = daily.filter((row) => row.day === day); return rowsOfDay.length ? sum(rowsOfDay, field) : null; });
+  const failureSpark = days.map((day) => { const rowsOfDay = daily.filter((row) => row.day === day); return ratio(sum(rowsOfDay, "tool_failures"), sum(rowsOfDay, "tool_calls")); });
+  const cacheSpark = days.map((day) => { const rowsOfDay = daily.filter((row) => row.day === day); const tokens = sum(rowsOfDay, "tokens"); return tokens ? rowsOfDay.reduce((acc, row) => acc + (row.cache_hit ?? 0) * row.tokens, 0) / tokens : null; });
+  document.getElementById("tiles").replaceChildren(
     tile({ label: "API-equivalent spend", value: formatUsd(now.api_usd), current: now.api_usd, previous: before.api_usd, better: "down", hint: "Claude only, at API list prices", spark: sparkline(total("api_usd")) }),
     tile({ label: "Tokens", value: formatCount(known(now, now.tokens)), current: known(now, now.tokens), previous: known(before, before.tokens), hint: "All agents, including cached", spark: sparkline(total("tokens")) }),
-    tile({ label: "Tasks", value: formatCount(known(now, now.tasks)), current: known(now, now.tasks), previous: known(before, before.tasks), hint: "Sessions with at least one model call", spark: sparkline(total("tasks")) }),
-    tile({ label: "Spend per task", value: formatUsd(perTask(now)), current: perTask(now), previous: perTask(before), better: "down", hint: "Lower is better, for similar work" }));
-
-  document.getElementById("tiles-health").replaceChildren(
-    tile({ label: "Cache hit rate", value: formatPercent(known(now, now.cache_hit)), current: known(now, now.cache_hit), previous: known(before, before.cache_hit), better: "up", points: true, status: bandStatus(known(now, now.cache_hit), now.requests ?? 0, 0.85, 0.6), hint: "Target ≥ 85%, poor below 60%", spark: sparkline(cacheSpark) }),
-    tile({ label: "Tool failure rate", value: formatPercent(failure(now)), current: failure(now), previous: failure(before), better: "down", points: true, status: bandStatus(failure(now), now.tool_calls ?? 0, 0.05, 0.15), hint: "Target < 5%, poor above 15%", spark: sparkline(failureSpark) }),
-    tile({ label: "Slow first token, p95", value: formatSeconds(known(now, now.ttft_p95_ms && now.ttft_p95_ms / 1000)), current: known(now, now.ttft_p95_ms), previous: known(before, before.ttft_p95_ms), better: "down", status: bandStatus(known(now, now.ttft_p95_ms), now.requests ?? 0, 5000, 15000), hint: "Target < 5 s, poor above 15 s" }),
-    tile({ label: "API errors", value: formatPercent(errors(now)), current: errors(now), previous: errors(before), better: "down", points: true, status: bandStatus(errors(now), now.requests ?? 0, 0.01, 0.05), hint: `${formatCount(now.api_errors ?? 0)} errors. Target < 1%, poor above 5%` }));
-
-  document.getElementById("tiles-output").replaceChildren(
-    tile({ label: "Commits", value: formatCount(known(now, now.commits)), current: known(now, now.commits), previous: known(before, before.commits), hint: "Made by Claude" }),
-    tile({ label: "Pull requests", value: formatCount(known(now, now.pull_requests)), current: known(now, now.pull_requests), previous: known(before, before.pull_requests), hint: "Made by Claude" }),
-    tile({ label: "Lines changed", value: formatCount(known(now, now.lines_changed)), current: known(now, now.lines_changed), previous: known(before, before.lines_changed), hint: "Added plus removed, Claude only" }),
-    tile({ label: "Tool calls per prompt", value: formatRatio(perPrompt(now)), current: perPrompt(now), previous: perPrompt(before), hint: "How far one prompt carries the agent" }),
-    tile({ label: "One-prompt tasks", value: formatPercent(oneShot(now)), current: oneShot(now), previous: oneShot(before), better: "up", points: true, hint: "Finished without a follow-up prompt" }));
+    tile({ label: "Tasks", value: formatCount(known(now, now.tasks)), current: known(now, now.tasks), previous: known(before, before.tasks), hint: "Sessions with model requests", spark: sparkline(total("tasks")) }),
+    tile({ label: "Spend per task", value: formatUsd(perTask(now)), current: perTask(now), previous: perTask(before), better: "down", hint: "Claude only" }),
+    tile({ label: "Cache hit", value: formatPercent(known(now, now.cache_hit)), current: known(now, now.cache_hit), previous: known(before, before.cache_hit), better: "up", points: true, status: bandStatus(known(now, now.cache_hit), now.requests ?? 0, 0.9, 0.7), hint: "Target 90% or higher", spark: sparkline(cacheSpark) }),
+    tile({ label: "Tool failure rate", value: formatPercent(failure(now)), current: failure(now), previous: failure(before), better: "down", points: true, status: bandStatus(failure(now), now.tool_calls ?? 0, 0.05, 0.1), hint: "Target below 5%", spark: sparkline(failureSpark) }),
+    tile({ label: "API error rate", value: formatPercent(known(now, errors(now))), current: known(now, errors(now)), previous: known(before, errors(before)), better: "down", points: true, status: bandStatus(known(now, errors(now)), now.requests ?? 0, 0.01, 0.03), hint: "Target below 1%" }),
+    tile({ label: "Done in one prompt", value: formatPercent(oneShot(now)), current: oneShot(now), previous: oneShot(before), better: "up", points: true, hint: "Tasks needing one prompt" }),
+    tile({ label: "First token, p95", value: formatSeconds(now.ttft_p95_ms == null ? null : now.ttft_p95_ms / 1000), current: now.ttft_p95_ms, previous: before.ttft_p95_ms, better: "down", hint: "Time to first token" }),
+    tile({ label: "Commits", value: formatCount(now.commits ?? 0), current: now.commits, previous: before.commits, better: "up", hint: `${formatCount(now.pull_requests ?? 0)} PRs, ${formatCount(now.lines_changed ?? 0)} lines changed` }),
+  );
 }
 
-function niceCeiling(value) {
-  const magnitude = 10 ** Math.floor(Math.log10(value));
-  const step = [1, 2, 5, 10].find((candidate) => candidate * magnitude >= value);
-  return step * magnitude;
-}
-
-function renderTrend(rows) {
-  latestDaily = rows;
-  const metric = TREND_METRICS[state.trendMetric];
-  const series = AGENT_SERIES.filter(([agent]) => metric.field !== "api_usd" || agent === "claude")
-    .filter(([agent]) => !state.agent || state.agent === agent);
-  const valueOf = (day, agent) => rows.find((row) => row.day === day && row.agent === agent)?.[metric.field] ?? 0;
-  const totalOf = (day) => series.reduce((sum, [agent]) => sum + valueOf(day, agent), 0);
-  const currentDays = dayList(state.days, 0);
-  const previousDays = dayList(state.days, state.days);
-  const hasPrevious = previousDays.some((day) => totalOf(day) > 0);
-  const peak = niceCeiling(Math.max(metric.field === "api_usd" ? 0.01 : 1, ...currentDays.map(totalOf), ...previousDays.map(totalOf)));
-
-  document.getElementById("trend-title").textContent = `${metric.label} per day`;
-  document.getElementById("trend-note").textContent = metric.field === "api_usd"
-    ? `Last ${state.days} days against the ${state.days} before. Claude's API-equivalent estimate; Codex reports no cost.`
-    : `Last ${state.days} days against the ${state.days} before, aligned by day.`;
-  document.getElementById("trend-metric").replaceChildren(...Object.entries(TREND_METRICS).map(([key, option]) => {
-    const button = element("button", { textContent: option.label });
-    button.setAttribute("aria-pressed", String(key === state.trendMetric));
-    button.addEventListener("click", () => { state.trendMetric = key; renderTrend(latestDaily); });
-    return button;
-  }));
-  const legendItems = series.map(([, label, color]) => element("span", {}, element("i", { style: `background: ${color}` }), label));
-  if (hasPrevious) legendItems.push(element("span", {}, element("i", { className: "line", style: "border-color: var(--series-previous)" }), `Previous ${state.days} days`));
-  document.getElementById("legend").replaceChildren(...(series.length > 1 || hasPrevious ? legendItems : []));
-
-  const chart = document.getElementById("trend");
-  const width = Math.max(300, chart.clientWidth), height = 260, left = 52, right = 8, top = 10, bottom = 26;
-  const plotHeight = height - top - bottom;
-  const slot = (width - left - right) / state.days;
-  const barWidth = Math.min(24, slot * 0.6);
-  const center = (index) => left + slot * (index + 0.5);
-  const y = (value) => top + (1 - value / peak) * plotHeight;
-  const svg = svgNode("svg", { viewBox: `0 0 ${width} ${height}`, role: "img", "aria-label": `${metric.label} per day. A table follows the chart.` });
-
-  [0, 0.5, 1].forEach((share) => {
-    const value = peak * share;
-    svg.append(svgNode("line", { x1: left, x2: width - right, y1: y(value), y2: y(value), stroke: "var(--line)" }));
-    const label = svgNode("text", { x: left - 8, y: y(value) + 4, "text-anchor": "end", "font-size": 12, fill: "var(--text-muted)" });
-    label.textContent = metric.format(value);
-    svg.append(label);
-  });
-
-  const labelStep = Math.ceil(state.days / Math.max(3, Math.floor(width / 70)));
-  const tooltip = element("div", { className: "tooltip", hidden: true });
-  const showTooltip = (index) => {
-    const day = currentDays[index];
-    const lines = series.map(([agent, label, color]) => element("div", {},
-      element("i", { style: `border-color: ${color}` }), element("strong", { textContent: metric.format(valueOf(day, agent)) }), ` ${label}`));
-    if (hasPrevious) lines.push(element("div", {},
-      element("i", { style: "border-color: var(--series-previous)" }), element("strong", { textContent: metric.format(totalOf(previousDays[index])) }), ` ${previousDays[index].slice(5)}`));
-    tooltip.replaceChildren(element("div", { textContent: day }), ...lines);
-    tooltip.hidden = false;
-    const position = (center(index) / width) * chart.clientWidth;
-    tooltip.style.left = `${Math.max(0, Math.min(position + 12, chart.clientWidth - tooltip.offsetWidth))}px`;
-    tooltip.style.top = "4px";
-  };
-
-  currentDays.forEach((day, index) => {
-    let base = 0;
-    const visible = series.filter(([agent]) => valueOf(day, agent) > 0);
-    visible.forEach(([agent, , color], position) => {
-      const value = valueOf(day, agent);
-      const segmentTop = y(base + value);
-      const segmentBottom = y(base) - (position ? 2 : 0);
-      const height = Math.max(1, segmentBottom - segmentTop);
-      const isLast = position === visible.length - 1;
-      const radius = isLast ? Math.min(4, height, barWidth / 2) : 0;
-      const x0 = center(index) - barWidth / 2, x1 = x0 + barWidth, y1 = segmentTop + height;
-      svg.append(svgNode("path", {
-        fill: color,
-        d: `M${x0},${y1}V${segmentTop + radius}Q${x0},${segmentTop} ${x0 + radius},${segmentTop}H${x1 - radius}Q${x1},${segmentTop} ${x1},${segmentTop + radius}V${y1}Z`,
-      }));
-      base += value;
-    });
-    if (index % labelStep === (state.days - 1) % labelStep) {
-      const label = svgNode("text", { x: center(index), y: height - 8, "text-anchor": "middle", "font-size": 12, fill: "var(--text-muted)" });
-      label.textContent = day.slice(5);
-      svg.append(label);
-    }
-  });
-
-  if (hasPrevious) {
-    const points = previousDays.map((day, index) => `${center(index)},${y(totalOf(day))}`).join(" ");
-    svg.append(svgNode("polyline", { points, fill: "none", stroke: "var(--series-previous)", "stroke-width": 2, "stroke-linejoin": "round", "stroke-linecap": "round" }));
-  }
-
-  currentDays.forEach((day, index) => {
-    const band = svgNode("rect", { class: "band", x: left + slot * index, y: top, width: slot, height: plotHeight, tabindex: 0, "aria-label": `${day}: ${metric.format(totalOf(day))}` });
-    band.addEventListener("pointerenter", () => showTooltip(index));
-    band.addEventListener("focus", () => showTooltip(index));
-    band.addEventListener("pointerleave", () => { tooltip.hidden = true; });
-    band.addEventListener("blur", () => { tooltip.hidden = true; });
-    svg.append(band);
-  });
-  chart.replaceChildren(svg, tooltip);
-
-  renderTable("trend-table", [
-    { title: "Day", render: (row) => row.day, sort: (row) => row.day },
-    ...series.map(([agent, label]) => ({ title: label, number: true, render: (row) => metric.format(row[agent]), sort: (row) => row[agent] })),
-    { title: "Total", number: true, render: (row) => metric.format(row.total), sort: (row) => row.total },
-  ], currentDays.map((day) => ({ day, total: totalOf(day), ...Object.fromEntries(series.map(([agent]) => [agent, valueOf(day, agent)])) })), "No activity.");
-}
-
-function renderTime(summaryRows) {
-  const now = summaryRows.find((row) => row.period === "current") ?? {};
+function renderTimeBar(row) {
   const parts = [
-    ["Model", now.model_minutes ?? 0, "var(--time-model)"],
-    ["Tools", now.tool_minutes ?? 0, "var(--time-tools)"],
-    ["Waiting on you", now.wait_minutes ?? 0, "var(--time-wait)"],
+    ["Model", row.model_minutes ?? 0, "var(--time-model)"],
+    ["Tools", row.tool_minutes ?? 0, "var(--time-tools)"],
+    ["Waiting", row.wait_minutes ?? 0, "var(--time-wait)"],
   ];
-  const total = parts.reduce((sum, [, minutes]) => sum + minutes, 0);
+  const totalMinutes = parts.reduce((acc, [, minutes]) => acc + minutes, 0);
   const bar = document.getElementById("time-bar");
-  const shown = parts.filter(([, minutes]) => minutes > 0);
-  bar.setAttribute("role", "img");
-  bar.setAttribute("aria-label", parts.map(([label, minutes]) => `${label} ${formatMinutes(minutes)}`).join(", "));
-  bar.replaceChildren(...shown.map(([label, minutes, color]) => {
-    const share = minutes / total;
-    return element("div", { style: `flex: ${minutes} 1 0; background: ${color}`, title: `${label}: ${formatMinutes(minutes)}`, textContent: share > 0.12 ? `${Math.round(share * 100)}%` : "" });
-  }));
-  document.getElementById("time-legend").replaceChildren(...parts.map(([label, minutes, color]) =>
-    element("span", {}, element("i", { style: `background: ${color}` }), `${label} ${formatMinutes(minutes)}`)));
+  if (!totalMinutes) { bar.replaceChildren(element("div", { className: "empty", textContent: "No timing data." })); document.getElementById("time-legend").replaceChildren(); return; }
+  bar.replaceChildren(...parts.filter(([, minutes]) => minutes > 0).map(([name, minutes, color]) => element("div", { style: `background:${color};flex:${minutes}`, title: `${name}: ${formatMinutes(minutes)}`, textContent: minutes / totalMinutes > 0.08 ? `${name} ${formatPercent(minutes / totalMinutes)}` : "" })));
+  legend(document.getElementById("time-legend"), parts.map(([name, minutes, color]) => ({ name: `${name} ${formatMinutes(minutes)}`, color, block: true })));
 }
 
-function renderTable(targetId, columns, rows, emptyMessage, onRowClick) {
-  const target = document.getElementById(targetId);
-  if (!rows.length) {
-    target.replaceChildren(element("div", { className: "empty", textContent: emptyMessage }));
-    return;
-  }
-  const sorted = tableSorts.get(targetId);
-  const column = sorted && columns.find((candidate) => candidate.title === sorted.title);
-  const ordered = column ? [...rows].sort((a, b) => {
-    const [first, second] = [column.sort(a), column.sort(b)];
-    const order = first < second ? -1 : first > second ? 1 : 0;
-    return sorted.descending ? -order : order;
-  }) : rows;
-  const head = element("tr", {}, ...columns.map((candidate) => {
-    const heading = element("th", { className: candidate.number ? "number" : "" });
-    if (!candidate.sort) {
-      heading.textContent = candidate.title;
-      return heading;
-    }
-    const isActive = column === candidate;
-    if (isActive) heading.setAttribute("aria-sort", sorted.descending ? "descending" : "ascending");
-    heading.append(element("button", {
-      textContent: `${candidate.title}${isActive ? (sorted.descending ? " ↓" : " ↑") : ""}`,
-      onclick: () => {
-        tableSorts.set(targetId, { title: candidate.title, descending: isActive ? !sorted.descending : true });
-        renderTable(targetId, columns, rows, emptyMessage, onRowClick);
-      },
-    }));
-    return heading;
-  }));
-  const body = ordered.map((row) => {
-    const line = element("tr", {}, ...columns.map((candidate) => {
-      const cell = element("td", { className: candidate.number ? "number" : candidate.wide ? "wide" : "" });
-      cell.append(candidate.render(row));
-      return cell;
-    }));
-    if (onRowClick) {
-      line.className = "clickable";
-      line.addEventListener("click", (event) => { if (!event.target.closest("button")) onRowClick(row); });
-    }
-    return line;
-  });
-  target.replaceChildren(element("table", {}, element("thead", {}, head), element("tbody", {}, ...body)));
+function sessionLink(row, text) {
+  return element("button", { className: "link", textContent: text, onclick: (event) => { event.stopPropagation(); openSession(row.session_id); } });
 }
 
-function labelled(primary, secondary, share) {
-  const wrapper = element("div", {}, primary);
-  if (secondary) wrapper.append(element("div", { className: "muted", textContent: secondary }));
-  if (share != null) wrapper.append(element("div", { className: "bar", style: `width: ${Math.max(share * 100, 1)}%` }));
-  return wrapper;
-}
-
-function renderBlockers(rows) {
-  const peak = Math.max(0.01, ...rows.map((row) => row.minutes));
-  renderTable("blockers", [
-    { title: "Blocker", wide: true, render: (row) => labelled(
-        element("button", { className: "link", textContent: row.name || "unknown", onclick: () => openBlocker(row) }), KIND_LABELS[row.kind], row.minutes / peak) },
-    { title: "Total", number: true, render: (row) => formatMinutes(row.minutes), sort: (row) => row.minutes },
-    { title: "p95", number: true, render: (row) => formatSeconds(row.p95_seconds), sort: (row) => row.p95_seconds },
-    { title: "Runs", number: true, render: (row) => formatCount(row.events), sort: (row) => row.events },
-    { title: "Failed", number: true, render: (row) => formatPercent(ratio(row.failures, row.events)), sort: (row) => ratio(row.failures, row.events) },
-  ], rows, "Nothing blocked an agent in this period.", openBlocker);
+function setFilter(field, value) {
+  state[field] = value;
+  load();
 }
 
 function renderProjects(rows) {
   const peak = Math.max(1, ...rows.map((row) => row.tokens));
-  const applyProject = (row) => {
-    state.project = state.project === row.project ? "" : row.project;
-    refresh();
-  };
-  renderTable("projects", [
-    { title: "Project", wide: true, render: (row) => labelled(
-        element("button", { className: "link", textContent: row.project, onclick: () => applyProject(row) }), `${formatCount(row.tasks)} tasks`, row.tokens / peak) },
-    { title: "API $", number: true, render: (row) => formatUsd(row.api_usd), sort: (row) => row.api_usd },
+  renderTable(document.getElementById("projects"), "projects", [
+    { title: "Project", render: (row) => element("div", {}, element("button", { className: "link", textContent: row.project || "unattributed", onclick: () => setFilter("project", row.project || "unattributed") }), element("div", { className: "bar", style: `width:${(row.tokens / peak) * 100}%` })), sort: (row) => row.project },
     { title: "Tokens", number: true, render: (row) => formatCount(row.tokens), sort: (row) => row.tokens },
-    { title: "Change", number: true, render: (row) => row.previous_tokens ? deltaNode(row.tokens, row.previous_tokens) : "new", sort: (row) => ratio(row.tokens, row.previous_tokens) ?? 0 },
-    { title: "Tool time", number: true, render: (row) => formatMinutes(row.tool_minutes), sort: (row) => row.tool_minutes },
+    { title: "Spend", number: true, render: (row) => formatUsd(row.api_usd), sort: (row) => row.api_usd ?? 0 },
+    { title: "Tasks", number: true, render: (row) => formatCount(row.tasks), sort: (row) => row.tasks },
     { title: "Failed", number: true, render: (row) => formatPercent(ratio(row.tool_failures, row.tool_calls)), sort: (row) => ratio(row.tool_failures, row.tool_calls) ?? 0 },
-  ], rows, "No project activity in this period.", applyProject);
+  ], rows, { empty: "No project data." });
+}
+
+function renderModels(rows) {
+  renderTable(document.getElementById("models"), "models", [
+    { title: "Model", render: (row) => element("span", {}, row.model, element("span", { className: "chip", textContent: row.agent })), sort: (row) => row.model },
+    { title: "Requests", number: true, render: (row) => formatCount(row.requests), sort: (row) => row.requests },
+    { title: "Tokens", number: true, render: (row) => formatCount(row.tokens), sort: (row) => row.tokens },
+    { title: "Spend", number: true, render: (row) => formatUsd(row.api_usd), sort: (row) => row.api_usd ?? 0 },
+    { title: "Cache", number: true, render: (row) => formatPercent(row.cache_hit), sort: (row) => row.cache_hit ?? 0 },
+    { title: "TTFT p95", number: true, render: (row) => formatSeconds(row.ttft_p95_ms == null ? null : row.ttft_p95_ms / 1000), sort: (row) => row.ttft_p95_ms ?? 0 },
+  ], rows, { empty: "No model data." });
+}
+
+function renderBlockers(rows) {
+  renderTable(document.getElementById("blockers"), "blockers", [
+    { title: "What", wide: true, render: (row) => element("span", {}, element("span", { className: "mono", textContent: row.name }), element("span", { className: "chip", textContent: KIND_LABELS[row.kind] ?? row.kind })), sort: (row) => row.name },
+    { title: "Time", number: true, render: (row) => formatMinutes(row.minutes), sort: (row) => row.minutes },
+    { title: "Runs", number: true, render: (row) => formatCount(row.events), sort: (row) => row.events },
+    { title: "Failed", number: true, render: (row) => formatCount(row.failures), sort: (row) => row.failures },
+    { title: "p95", number: true, render: (row) => formatSeconds(row.p95_seconds), sort: (row) => row.p95_seconds },
+  ], rows, { onRow: openBlocker, empty: "No blockers in this window." });
+}
+
+function renderFailureTiles(summary, failureDaily, decisions, hookBlocks) {
+  const now = summary.find((row) => row.period === "current") ?? {};
+  const before = summary.find((row) => row.period === "previous") ?? {};
+  const days = dayList(state.days, 0);
+  const inWindow = failureDaily.filter((row) => days.includes(row.day));
+  const failures = sum(inWindow, "failures");
+  const detailed = sum(inWindow, "detailed");
+  const approved = sum(decisions, "you_approved");
+  const blocked = sum(hookBlocks, "blocks");
+  const failureRate = ratio(now.tool_failures, now.tool_calls);
+  document.getElementById("reliability-tiles").replaceChildren(
+    tile({ label: "Tool failure rate", value: formatPercent(failureRate), current: failureRate, previous: ratio(before.tool_failures, before.tool_calls), better: "down", points: true, status: bandStatus(failureRate, now.tool_calls ?? 0, 0.05, 0.1), hint: `${formatCount(now.tool_failures ?? 0)} of ${formatCount(now.tool_calls ?? 0)} calls` }),
+    tile({ label: "Failures with error text", value: formatPercent(ratio(detailed, failures)), hint: `${formatCount(detailed)} of ${formatCount(failures)} captured by the new hook` }),
+    tile({ label: "Guard blocks", value: formatCount(blocked), hint: "Secret and papercuts guard refusals" }),
+    tile({ label: "You approved", value: formatCount(approved), hint: `${formatCount(sum(decisions, "auto_allowed"))} more were allowed by config` }),
+  );
+}
+
+function renderFailureCharts(failureDaily, decisions) {
+  const days = dayList(state.days, 0);
+  const lookup = (rows, field) => days.map((day) => rows.find((row) => row.day === day)?.[field] ?? 0);
+  drawChart(document.getElementById("failure-chart"), {
+    label: "Tool failures per day",
+    labels: days,
+    format: formatCount,
+    series: [
+      { name: "All failures", color: "#d95926", area: true, values: lookup(failureDaily, "failures") },
+      { name: "With error text", color: "#199e70", values: lookup(failureDaily, "detailed") },
+    ],
+  });
+  legend(document.getElementById("failure-legend"), [{ name: "All failures", color: "#d95926" }, { name: "With error text", color: "#199e70" }]);
+  drawChart(document.getElementById("decision-chart"), {
+    kind: "bars",
+    label: "Permission decisions per day",
+    labels: days,
+    format: formatCount,
+    series: DECISION_SERIES.map(([field, name, color]) => ({ name, color, values: lookup(decisions, field) })),
+  });
+  legend(document.getElementById("decision-legend"), DECISION_SERIES.map(([, name, color]) => ({ name, color, block: true })));
+  document.getElementById("decisions-note").textContent = `Decisions that needed a person or a guard. ${formatCount(sum(decisions, "auto_allowed"))} calls were allowed by config and are left out.`;
+}
+
+function renderFailures(rows) {
+  renderTable(document.getElementById("failures"), "failures", [
+    { title: "Tool", render: (row) => element("span", { className: "mono nowrap", textContent: row.tool }), sort: (row) => row.tool },
+    { title: "Error", wide: true, render: (row) => element("span", {}, row.message || "(no text)", element("span", { className: "chip", textContent: row.error_type })), sort: (row) => row.message },
+    { title: "Failures", number: true, render: (row) => formatCount(row.failures), sort: (row) => row.failures },
+    { title: "Sessions", number: true, render: (row) => formatCount(row.sessions), sort: (row) => row.sessions },
+    { title: "Last seen", number: true, render: (row) => row.last_seen, sort: (row) => row.last_seen },
+  ], rows, { empty: "No failures in this window." });
+}
+
+function renderHookBlocks(rows) {
+  renderTable(document.getElementById("hook-blocks"), "hooks", [
+    { title: "Guard", render: (row) => element("span", { className: "mono nowrap", textContent: row.hook }), sort: (row) => row.hook },
+    { title: "Refused", wide: true, render: (row) => row.reason, sort: (row) => row.reason },
+    { title: "Blocks", number: true, render: (row) => formatCount(row.blocks), sort: (row) => row.blocks },
+    { title: "Last seen", number: true, render: (row) => row.last_seen, sort: (row) => row.last_seen },
+  ], rows, { empty: "No guard blocks in this window." });
+}
+
+function renderRecentFailures(rows) {
+  renderTable(document.getElementById("recent-failures"), "recent", [
+    { title: "When", render: (row) => element("span", { className: "small nowrap", textContent: row.at }) },
+    { title: "Session", wide: true, render: (row) => element("div", {}, element("div", { textContent: row.t3_title || row.project || "unattributed" }), noteText(`${row.host} · ${row.tool}`)) },
+    { title: "Error", wide: true, render: (row) => element("div", {}, element("div", { textContent: row.error }), row.command ? element("div", { className: "mono", textContent: row.command }) : document.createTextNode("")) },
+  ], rows, { onRow: (row) => openSession(row.session_id), empty: "No failures in this window." });
+}
+
+function renderCoverage(rows) {
+  renderTable(document.getElementById("coverage"), "coverage", [
+    { title: "Host", render: (row) => row.host, sort: (row) => row.host },
+    { title: "Failures", number: true, render: (row) => formatCount(row.failures), sort: (row) => row.failures ?? 0 },
+    { title: "With error text", number: true, render: (row) => formatPercent(ratio(row.detailed, row.failures)), sort: (row) => ratio(row.detailed, row.failures) ?? 0 },
+    { title: "Sessions", number: true, render: (row) => formatCount(row.sessions), sort: (row) => row.sessions ?? 0 },
+    { title: "With T3 title", number: true, render: (row) => formatPercent(ratio(row.titled, row.sessions)), sort: (row) => ratio(row.titled, row.sessions) ?? 0 },
+  ], rows, { empty: "No hosts reported." });
 }
 
 function renderTasks() {
   const needle = state.taskSearch.toLowerCase();
-  const rows = latestTasks.filter((row) => `${row.task} ${row.project} ${row.branch}`.toLowerCase().includes(needle));
-  renderTable("tasks", [
-    { title: "Task", wide: true, render: (row) => labelled(
-        element("button", { className: "link", textContent: row.task || "untitled", onclick: () => openSession(row.session_id) }),
-        `${row.project}${row.branch ? ` · ${row.branch}` : ""} · ${row.agent} on ${row.host || "unknown host"} · ${row.started_at}`) },
-    { title: "API $", number: true, render: (row) => formatUsd(row.api_usd), sort: (row) => row.api_usd ?? -1 },
-    { title: "Tokens", number: true, render: (row) => formatCount(row.tokens), sort: (row) => row.tokens },
+  const rows = latestTasks.filter((row) => !needle || [row.task, row.project, row.branch, row.host].join(" ").toLowerCase().includes(needle));
+  renderTable(document.getElementById("tasks"), "tasks", [
+    { title: "Task", wide: true, render: (row) => element("div", {}, element("span", {}, sessionLink(row, row.task || "(no title)"), row.t3_title ? element("span", { className: "chip", textContent: "T3" }) : document.createTextNode("")), noteText(`${row.project || "unattributed"} · ${row.branch || "no branch"}`)), sort: (row) => row.task },
+    { title: "Agent", render: (row) => element("span", { className: "nowrap", textContent: `${row.agent} · ${row.host}` }), sort: (row) => row.agent },
+    { title: "Started", render: (row) => element("span", { className: "small nowrap", textContent: row.started_at }), sort: (row) => row.started_at },
     { title: "Duration", number: true, render: (row) => formatMinutes(row.minutes), sort: (row) => row.minutes },
-    { title: "Prompts", number: true, render: (row) => formatCount(row.prompts), sort: (row) => row.prompts },
-    { title: "Tools", number: true, render: (row) => formatCount(row.tool_calls), sort: (row) => row.tool_calls },
-    { title: "Failed", number: true, render: (row) => formatCount(row.tool_failures), sort: (row) => row.tool_failures },
-    { title: "Tool time", number: true, render: (row) => formatMinutes(row.tool_minutes), sort: (row) => row.tool_minutes },
-  ], rows, state.taskSearch ? "No task matches this search." : "No tasks in this period.", (row) => openSession(row.session_id));
-}
-
-function renderModels(rows) {
-  renderTable("models", [
-    { title: "Model", wide: true, render: (row) => labelled(row.model || "unknown", row.agent), sort: (row) => row.model },
-    { title: "Calls", number: true, render: (row) => formatCount(row.requests), sort: (row) => row.requests },
     { title: "Tokens", number: true, render: (row) => formatCount(row.tokens), sort: (row) => row.tokens },
-    { title: "Cache", number: true, render: (row) => formatPercent(row.cache_hit), sort: (row) => row.cache_hit ?? -1 },
-    { title: "TTFT p95", number: true, render: (row) => row.ttft_p95_ms ? formatSeconds(row.ttft_p95_ms / 1000) : "–", sort: (row) => row.ttft_p95_ms },
-    { title: "API $", number: true, render: (row) => formatUsd(row.api_usd), sort: (row) => row.api_usd ?? -1 },
-  ], rows, "No model calls in this period.");
+    { title: "Spend", number: true, render: (row) => formatUsd(row.api_usd), sort: (row) => row.api_usd ?? 0 },
+    { title: "Failed", number: true, render: (row) => formatCount(row.tool_failures), sort: (row) => row.tool_failures },
+  ], rows, { onRow: (row) => openSession(row.session_id), empty: "No tasks match." });
 }
 
-function sinceText(minutes) {
-  if (minutes < 1) return "just now";
-  if (minutes < 60) return `${minutes} min ago`;
-  return minutes < 1440 ? `${Math.floor(minutes / 60)} h ago` : `${Math.floor(minutes / 1440)} d ago`;
+function renderFleet(rows) {
+  renderTable(document.getElementById("fleet"), "fleet", [
+    { title: "Host", render: (row) => row.host, sort: (row) => row.host },
+    { title: "Agent", render: (row) => row.agent, sort: (row) => row.agent },
+    { title: "Status", render: (row) => element("span", { className: `status ${row.minutes_since < 60 ? "good" : "watch"}`, textContent: row.minutes_since < 60 ? "● live" : `○ idle ${formatMinutes(row.minutes_since)}` }), sort: (row) => row.minutes_since },
+    { title: "Events today", number: true, render: (row) => formatCount(row.events_today), sort: (row) => row.events_today },
+    { title: "First seen", number: true, render: (row) => row.first_seen, sort: (row) => row.first_seen },
+  ], rows, { empty: "No hosts." });
 }
 
-function renderFleet(rows, t3Rows) {
-  renderTable("fleet", [
-    { title: "Host", render: (row) => row.host },
-    { title: "Agent", render: (row) => row.agent },
-    { title: "Last event", number: true, render: (row) => sinceText(row.minutes_since) },
-    { title: "Events, 24 h", number: true, render: (row) => formatCount(row.events_today) },
-  ], rows, "No host has reported yet.");
-  renderTable("t3", [
-    { title: "T3 runs", render: (row) => `${row.provider}${row.delegated === "true" ? " delegated" : ""}` },
-    { title: "Done", number: true, render: (row) => formatCount(row.completed) },
-    { title: "Cancelled", number: true, render: (row) => formatCount(row.cancelled) },
-    { title: "Avg queue", number: true, render: (row) => formatSeconds(row.queue_seconds) },
-    { title: "Avg run", number: true, render: (row) => formatSeconds(row.run_seconds) },
-  ], t3Rows, "No T3 runs in this period.");
-  const newest = Math.min(...rows.map((row) => row.minutes_since));
-  document.getElementById("freshness").textContent = rows.length ? `Last event ${sinceText(newest)}` : "No events yet";
-  const earliest = rows.map((row) => row.first_seen).sort()[0];
-  const coverage = document.getElementById("coverage");
-  const spansPeriod = earliest && new Date(earliest.replace(" ", "T")) <= new Date(Date.now() - state.days * 86400000);
-  coverage.hidden = !earliest || spansPeriod;
-  coverage.textContent = `Data starts ${earliest}, so this period is partial. Agent sessions export only if they started after telemetry was set up on their host.`;
+function renderT3(rows) {
+  renderTable(document.getElementById("t3"), "t3", [
+    { title: "Provider", render: (row) => element("span", {}, row.provider, row.delegated === "true" ? element("span", { className: "chip", textContent: "delegated" }) : document.createTextNode("")), sort: (row) => row.provider },
+    { title: "Completed", number: true, render: (row) => formatCount(row.completed), sort: (row) => row.completed },
+    { title: "Cancelled", number: true, render: (row) => formatCount(row.cancelled), sort: (row) => row.cancelled },
+    { title: "Queue", number: true, render: (row) => formatSeconds(row.queue_seconds), sort: (row) => row.queue_seconds ?? 0 },
+    { title: "Run", number: true, render: (row) => formatSeconds(row.run_seconds), sort: (row) => row.run_seconds ?? 0 },
+  ], rows, { empty: "No T3 runs." });
 }
 
-function renderSelect(id, field, label, rows) {
-  const values = rows.filter((row) => row.dimension === field).map((row) => row.value);
-  if (state[field] && !values.includes(state[field])) values.push(state[field]);
-  const select = document.getElementById(id);
-  select.replaceChildren(element("option", { value: "", textContent: `All ${label}` }),
-    ...values.map((value) => element("option", { value, textContent: value })));
-  select.value = state[field];
-}
+const drawer = document.getElementById("drawer");
+drawer.addEventListener("close", () => { state.session = ""; syncUrl(); });
+document.getElementById("drawer-close").onclick = () => drawer.close();
 
-function renderRanges() {
-  document.getElementById("ranges").replaceChildren(...RANGES.map((range) => {
-    const button = element("button", { textContent: `${range} days` });
-    button.setAttribute("aria-pressed", String(range === state.days));
-    button.addEventListener("click", () => { state.days = range; refresh(); });
-    return button;
-  }));
-  document.getElementById("clear").hidden = !(state.project || state.host || state.agent);
-}
-
-function openDrawer(title, subtitle, ...content) {
+function openDrawer(title, subtitle, nodes) {
   document.getElementById("drawer-title").textContent = title;
   document.getElementById("drawer-subtitle").textContent = subtitle;
-  document.getElementById("drawer-body").replaceChildren(...content);
-  const drawer = document.getElementById("drawer");
+  document.getElementById("drawer-body").replaceChildren(...nodes);
   if (!drawer.open) drawer.showModal();
 }
 
 function fact(label, value) {
-  return element("div", {}, element("strong", { textContent: value }), element("span", { className: "muted", textContent: label }));
-}
-
-function step(row) {
-  const amount = [row.seconds ? formatSeconds(row.seconds) : "", row.api_usd ? formatUsd(row.api_usd) : ""].filter(Boolean).join(" · ");
-  const body = element("div", {}, element("div", { textContent: row.title }));
-  if (row.detail) body.append(element("pre", { className: "text", textContent: row.detail }));
-  return element("div", { className: `step ${row.kind}${row.failed ? " failed" : ""}` },
-    element("div", { className: "time", textContent: row.at.slice(11) }),
-    element("div", { className: "kind", textContent: row.failed && row.kind === "tool" ? "tool failed" : STEP_LABELS[row.kind] }),
-    body,
-    element("div", { className: "amount", textContent: amount }));
+  return element("div", {}, element("strong", { textContent: value }), label);
 }
 
 async function openSession(sessionId) {
   state.session = sessionId;
   syncUrl();
-  openDrawer("Loading task", "");
   try {
-    const [[summary], steps] = await Promise.all([
-      panel("session_summary", { session: sessionId }),
-      panel("session", { session: sessionId }),
-    ]);
-    if (!summary) {
-      openDrawer("Task not found", sessionId);
-      return;
-    }
-    const facts = element("div", { className: "facts" },
-      fact("API-equivalent", formatUsd(summary.api_usd)),
-      fact("tokens", formatCount(summary.tokens)),
-      fact("duration", formatMinutes(summary.minutes)),
-      fact("prompts", formatCount(summary.prompts)),
-      fact("tool calls", formatCount(summary.tool_calls)),
-      fact("failed tools", formatCount(summary.tool_failures)),
-      fact("tool time", formatMinutes(summary.tool_minutes)));
-    const note = steps.length >= 600 ? element("div", { className: "muted", textContent: "Showing the first 600 steps." }) : document.createTextNode("");
-    openDrawer(summary.task || "Untitled task",
-      `${summary.project}${summary.branch ? ` · ${summary.branch}` : ""} · ${summary.agent} on ${summary.host || "unknown host"} · ${summary.started_at}`,
-      facts, note, element("div", {}, ...steps.map(step)));
-  } catch (error) {
-    openDrawer("Could not load this task", error.message);
-  }
+    const [[summary], steps] = await Promise.all([panel("session_summary", { session: sessionId }), panel("session", { session: sessionId })]);
+    const timeline = steps.map((step) => {
+      const amount = step.tokens ? `${formatCount(step.tokens)} tok${step.api_usd != null ? ` · ${formatUsd(step.api_usd)}` : ""}` : step.seconds ? formatSeconds(step.seconds) : "";
+      const time = step.at.slice(11, 19);
+      return element("div", { className: `step ${step.kind} ${step.failed ? "failed" : ""}` },
+        element("div", { className: "time", textContent: time }),
+        element("div", { className: "kind", textContent: STEP_LABELS[step.kind] ?? step.kind }),
+        element("div", {}, element("div", { textContent: step.title }), step.detail ? element("pre", { className: "text", textContent: step.detail }) : document.createTextNode("")),
+        element("div", { className: "amount", textContent: amount }));
+    });
+    const facts = summary ? element("div", { className: "facts" },
+      fact("duration", formatMinutes(summary.minutes)), fact("prompts", formatCount(summary.prompts)), fact("tool calls", formatCount(summary.tool_calls)),
+      fact("failed tools", formatCount(summary.tool_failures)), fact("tokens", formatCount(summary.tokens)), fact("spend", formatUsd(summary.api_usd))) : document.createTextNode("");
+    openDrawer(summary?.task || "Session", summary ? `${summary.project || "unattributed"} · ${summary.branch || "no branch"} · ${summary.agent} on ${summary.host} · ${summary.started_at}` : sessionId, [facts, ...(timeline.length ? timeline : [element("div", { className: "empty", textContent: "No recorded steps." })])]);
+  } catch (error) { showError(error); }
 }
 
 async function openBlocker(row) {
-  openDrawer(row.name || "unknown", "Loading runs");
   try {
     const runs = await panel("blocker_runs", { kind: row.kind, name: row.name });
-    const facts = element("div", { className: "facts" },
-      fact("total", formatMinutes(row.minutes)),
-      fact("runs", formatCount(row.events)),
-      fact("p95", formatSeconds(row.p95_seconds)),
-      fact("longest", formatSeconds(row.longest_seconds)),
-      fact("failed", formatCount(row.failures)));
-    const list = element("div", {}, ...runs.map((run) => {
-      const item = element("div", { className: `step tool${run.failed ? " failed" : ""}` },
-        element("div", { className: "time", textContent: run.at.slice(5, 16) }),
-        element("div", { className: "kind", textContent: run.failed ? "failed" : "ok" }),
-        element("div", {},
-          element("button", { className: "link", textContent: run.task || run.project || "open task", onclick: () => openSession(run.session_id) }),
-          run.detail ? element("pre", { className: "text", textContent: run.detail }) : document.createTextNode("")),
-        element("div", { className: "amount", textContent: formatSeconds(run.seconds) }));
-      return item;
-    }));
-    openDrawer(row.name || "unknown", `${KIND_LABELS[row.kind]} · slowest ${runs.length} runs`, facts, list);
-  } catch (error) {
-    openDrawer("Could not load these runs", error.message);
-  }
+    const holder = element("div", { className: "scroll" });
+    renderTable(holder, `runs-${row.kind}-${row.name}`, [
+      { title: "When", render: (run) => noteText(run.at), sort: (run) => run.at },
+      { title: "Detail", wide: true, render: (run) => element("div", {}, element("div", { className: "mono", textContent: run.detail || row.name }), noteText(`${run.project || "unattributed"} · ${run.task || ""}`)) },
+      { title: "Duration", number: true, render: (run) => formatSeconds(run.seconds), sort: (run) => run.seconds },
+      { title: "Failed", number: true, render: (run) => run.failed ? "✕" : "", sort: (run) => run.failed },
+    ], runs, { onRow: (run) => openSession(run.session_id), empty: "No runs." });
+    openDrawer(row.name, `${KIND_LABELS[row.kind] ?? row.kind} · ${formatMinutes(row.minutes)} over ${formatCount(row.events)} runs`, [holder]);
+  } catch (error) { showError(error); }
 }
 
-async function refresh() {
-  syncUrl();
-  renderRanges();
-  const main = document.getElementById("main");
+function showError(error) {
   const banner = document.getElementById("error");
-  main.classList.add("loading");
-  try {
-    const [summary, daily, blockers, projects, tasks, models, filters, fleet, t3] = await Promise.all(
-      ["summary", "daily", "blockers", "projects", "tasks", "models", "filters", "fleet", "t3"].map((name) => panel(name)));
-    renderSelect("filter-project", "project", "projects", filters);
-    renderSelect("filter-host", "host", "hosts", filters);
-    renderSelect("filter-agent", "agent", "agents", filters);
+  banner.hidden = false;
+  banner.textContent = `Could not load data. ${error.message}`;
+}
+
+function renderChrome() {
+  const page = PAGES.find((candidate) => candidate.id === state.page);
+  document.getElementById("page-title").textContent = page.label;
+  document.getElementById("page-sub").textContent = `${page.sub} · last ${state.days} days`;
+  document.querySelectorAll("[data-page]").forEach((node) => { node.hidden = node.dataset.page !== state.page; });
+  document.querySelectorAll("#nav button").forEach((button) => { if (button.dataset.nav === state.page) button.setAttribute("aria-current", "page"); else button.removeAttribute("aria-current"); });
+  document.getElementById("metrics").hidden = state.page !== "overview";
+  document.querySelectorAll("#agents button").forEach((button) => button.setAttribute("aria-pressed", String(button.dataset.agent === state.agent)));
+  document.querySelectorAll("#ranges button").forEach((button) => button.setAttribute("aria-pressed", String(Number(button.dataset.days) === state.days)));
+  document.querySelectorAll("#metrics button").forEach((button) => button.setAttribute("aria-pressed", String(button.dataset.metric === state.metric)));
+  document.getElementById("clear").hidden = !(state.project || state.host);
+  document.getElementById("filter-project").value = state.project;
+  document.getElementById("filter-host").value = state.host;
+  syncUrl();
+}
+
+async function loadFilters() {
+  const rows = await panel("filters");
+  [["project", "All projects"], ["host", "All hosts"]].forEach(([dimension, allLabel]) => {
+    const select = document.getElementById(`filter-${dimension}`);
+    const values = rows.filter((row) => row.dimension === dimension).map((row) => row.value);
+    select.replaceChildren(element("option", { value: "", textContent: allLabel }), ...values.map((value) => element("option", { value, textContent: value })));
+    select.value = state.project && dimension === "project" ? state.project : state[dimension];
+  });
+}
+
+const loaders = {
+  async overview() {
+    const [summary, daily, projects, models] = await Promise.all([panel("summary"), panel("daily"), panel("projects"), panel("models")]);
     renderTiles(summary, daily);
-    renderTrend(daily);
-    renderTime(summary);
-    renderBlockers(blockers);
+    renderHeroes(daily);
+    renderTimeBar(summary.find((row) => row.period === "current") ?? {});
     renderProjects(projects);
-    latestTasks = tasks;
-    renderTasks();
     renderModels(models);
-    renderFleet(fleet, t3);
-    banner.hidden = true;
-  } catch (error) {
-    banner.textContent = `Could not load data: ${error.message}`;
-    banner.hidden = false;
-  }
+  },
+  async reliability() {
+    const [summary, failureDaily, decisions, hookBlocks, failures, recent, blockers, coverage] = await Promise.all([panel("summary"), panel("failure_daily"), panel("decisions"), panel("hook_blocks"), panel("failures"), panel("failures_recent"), panel("blockers"), panel("coverage")]);
+    renderFailureTiles(summary, failureDaily, decisions, hookBlocks);
+    renderFailureCharts(failureDaily, decisions);
+    renderFailures(failures);
+    renderHookBlocks(hookBlocks);
+    renderBlockers(blockers);
+    renderRecentFailures(recent);
+    renderCoverage(coverage);
+  },
+  async tasks() {
+    latestTasks = await panel("tasks");
+    renderTasks();
+  },
+  async fleet() {
+    const [fleet, t3] = await Promise.all([panel("fleet"), panel("t3")]);
+    renderFleet(fleet);
+    renderT3(t3);
+  },
+};
+
+async function load() {
+  const main = document.getElementById("main");
+  main.classList.add("loading");
+  document.getElementById("error").hidden = true;
+  renderChrome();
+  try {
+    await loaders[state.page]();
+    document.getElementById("freshness").textContent = `Updated ${new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`;
+  } catch (error) { showError(error); }
   main.classList.remove("loading");
 }
 
-["project", "host", "agent"].forEach((field) => {
-  document.getElementById(`filter-${field}`).addEventListener("change", (event) => {
-    state[field] = event.target.value;
-    refresh();
-  });
-});
-document.getElementById("clear").addEventListener("click", () => {
-  Object.assign(state, { project: "", host: "", agent: "" });
-  refresh();
-});
-document.getElementById("task-search").addEventListener("input", (event) => {
-  state.taskSearch = event.target.value;
-  renderTasks();
-});
-const drawer = document.getElementById("drawer");
-document.getElementById("drawer-close").addEventListener("click", () => drawer.close());
-drawer.addEventListener("click", (event) => { if (event.target === drawer) drawer.close(); });
-drawer.addEventListener("close", () => {
-  state.session = "";
-  syncUrl();
-});
+function setup() {
+  drawIcon(document.getElementById("brand-icon"), ["M4 12h10", "M10 6l6 6-6 6", "M19 5v14"]);
+  drawIcon(document.getElementById("refresh-icon"), ["M21 12a9 9 0 1 1-3-6.7", "M21 4v5h-5"]);
+  document.getElementById("nav").replaceChildren(...PAGES.map((page) => {
+    const icon = svgNode("svg", { viewBox: "0 0 24 24", class: "icon" });
+    drawIcon(icon, page.icon);
+    return element("button", { onclick: () => { state.page = page.id; load(); } }, icon, page.label);
+  }));
+  document.querySelectorAll("#nav button").forEach((button, index) => { button.dataset.nav = PAGES[index].id; });
+  document.getElementById("agents").replaceChildren(...AGENTS.map(([agent, label, color]) => {
+    const button = element("button", { onclick: () => setFilter("agent", agent) }, element("i", { className: "dot", style: `background:${color}` }), label);
+    button.dataset.agent = agent;
+    return button;
+  }));
+  document.getElementById("ranges").replaceChildren(...RANGES.map((days) => {
+    const button = element("button", { textContent: `${days} days`, onclick: () => setFilter("days", days) });
+    button.dataset.days = days;
+    return button;
+  }));
+  document.getElementById("metrics").replaceChildren(...Object.entries(METRICS).map(([key, metric]) => {
+    const button = element("button", { textContent: metric.label, onclick: () => setFilter("metric", key) });
+    button.dataset.metric = key;
+    return button;
+  }));
+  document.getElementById("filter-project").onchange = (event) => setFilter("project", event.target.value);
+  document.getElementById("filter-host").onchange = (event) => setFilter("host", event.target.value);
+  document.getElementById("clear").onclick = () => { state.project = ""; state.host = ""; load(); };
+  document.getElementById("refresh").onclick = () => load();
+  document.getElementById("task-search").oninput = (event) => { state.taskSearch = event.target.value; renderTasks(); };
+  window.addEventListener("hashchange", () => { const page = location.hash.slice(1); if (PAGES.some((candidate) => candidate.id === page) && page !== state.page) { state.page = page; load(); } });
+}
 
-refresh();
-if (state.session) openSession(state.session);
-setInterval(() => { if (!drawer.open) refresh(); }, 60000);
+setup();
+loadFilters().then(load).then(() => { if (state.session) openSession(state.session); });
 </script>
 </body>
 </html>
