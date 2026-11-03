@@ -120,6 +120,13 @@ tr.clickable:hover td { background: var(--surface-2); }
 .nowrap { white-space: nowrap; }
 .bar { height: 4px; margin-top: 6px; border-radius: 0 2px 2px 0; background: var(--accent); min-width: 2px; }
 .empty { color: var(--muted); padding: 14px 0; }
+.spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid var(--line-strong); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; flex: none; }
+@keyframes spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .spinner { animation-duration: 2.4s; } .btn.busy .icon { animation: none; } }
+.loader, .loading-row { display: flex; align-items: center; gap: 12px; color: var(--text-2); font-size: 13px; }
+.loader { position: fixed; top: 18px; left: 50%; transform: translateX(-50%); background: var(--surface-3); border: 1px solid var(--line-strong); border-radius: 999px; padding: 8px 16px; z-index: 5; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45); }
+.loading-row { padding: 36px 0; justify-content: center; }
+.btn.busy .icon { animation: spin 0.9s linear infinite; }
 [hidden] { display: none !important; }
 dialog { background: var(--surface); color: var(--text); border: 1px solid var(--line-strong); border-radius: 16px 0 0 16px; padding: 0; margin: 0 0 0 auto; height: 100dvh; max-height: 100dvh; width: min(860px, 100vw); max-width: 100vw; }
 dialog::backdrop { background: rgba(0, 0, 0, 0.6); }
@@ -166,6 +173,7 @@ dialog::backdrop { background: rgba(0, 0, 0, 0.6); }
       <button class="ghost" id="clear" hidden>Clear filters</button>
     </div>
     <div id="error" hidden class="banner error" role="alert"></div>
+    <div id="loader" class="loader" role="status" hidden><i class="spinner"></i>Loading</div>
 
     <section data-page="overview" hidden>
       <div class="tiles" id="tiles"></div>
@@ -855,6 +863,14 @@ function openDrawer(title, subtitle, nodes, back) {
   if (!drawer.open) drawer.showModal();
 }
 
+function loadingRows() {
+  return [element("div", { className: "loading-row", role: "status" }, element("i", { className: "spinner" }), "Loading")];
+}
+
+function drawerError(error) {
+  openDrawer("Could not load data", error.message, []);
+}
+
 function fact(label, value) {
   return element("div", {}, element("strong", { textContent: value }), label);
 }
@@ -862,6 +878,7 @@ function fact(label, value) {
 async function openSession(sessionId, back) {
   state.session = sessionId;
   syncUrl();
+  openDrawer("Session", sessionId, loadingRows(), back);
   try {
     const [[summary], steps] = await Promise.all([panel("session_summary", { session: sessionId }), panel("session", { session: sessionId })]);
     const timeline = steps.map((step) => {
@@ -877,10 +894,11 @@ async function openSession(sessionId, back) {
       fact("duration", formatMinutes(summary.minutes)), fact("prompts", formatCount(summary.prompts)), fact("tool calls", formatCount(summary.tool_calls)),
       fact("failed tools", formatCount(summary.tool_failures)), fact("tokens", formatCount(summary.tokens)), fact("spend", formatUsd(summary.api_usd))) : document.createTextNode("");
     openDrawer(summary?.task || "Session", summary ? `${summary.project || "unattributed"} · ${summary.branch || "no branch"} · ${summary.agent} on ${summary.host} · ${summary.started_at}` : sessionId, [facts, ...(timeline.length ? timeline : [element("div", { className: "empty", textContent: "No recorded steps." })])], back);
-  } catch (error) { showError(error); }
+  } catch (error) { drawerError(error); }
 }
 
 async function openBlocker(row, extra = {}, back) {
+  openDrawer(row.name, "Loading runs", loadingRows(), back);
   try {
     const runs = await panel("blocker_runs", { kind: row.kind, name: row.name, ...extra });
     const holder = element("div", { className: "scroll" });
@@ -891,7 +909,7 @@ async function openBlocker(row, extra = {}, back) {
       { title: "Failed", number: true, render: (run) => run.failed ? "✕" : "", sort: (run) => run.failed },
     ], runs, { onRow: (run) => openSession(run.session_id, () => openBlocker(row, extra, back)), empty: "No runs." });
     openDrawer(row.name, `${KIND_LABELS[row.kind] ?? row.kind} · ${formatMinutes(row.minutes)} over ${formatCount(row.events)} runs`, [holder], back);
-  } catch (error) { showError(error); }
+  } catch (error) { drawerError(error); }
 }
 
 function drawerSection(title, note, node) {
@@ -901,6 +919,7 @@ function drawerSection(title, note, node) {
 async function openProject(row) {
   const name = row.project || "unattributed";
   const MAX_TASKS = 15;
+  openDrawer(name, `Last ${state.days} days`, loadingRows());
   try {
     const [blockers, tasks, failures] = await Promise.all([panel("blockers", { project: name }), panel("tasks", { project: name }), panel("failures", { project: name })]);
     const back = () => openProject(row);
@@ -929,7 +948,7 @@ async function openProject(row) {
           { title: "Failed", number: true, render: (task) => formatCount(task.tool_failures), sort: (task) => task.tool_failures },
         ], tasks.slice(0, MAX_TASKS), { onRow: (task) => openSession(task.session_id, back), empty: "No tasks." })),
     ]);
-  } catch (error) { showError(error); }
+  } catch (error) { drawerError(error); }
 }
 
 function showError(error) {
@@ -997,6 +1016,8 @@ const loaders = {
 async function load() {
   const main = document.getElementById("main");
   main.classList.add("loading");
+  document.getElementById("loader").hidden = false;
+  document.getElementById("refresh").classList.add("busy");
   document.getElementById("error").hidden = true;
   renderChrome();
   try {
@@ -1004,6 +1025,8 @@ async function load() {
     document.getElementById("freshness").textContent = `Updated ${new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`;
   } catch (error) { showError(error); }
   main.classList.remove("loading");
+  document.getElementById("loader").hidden = true;
+  document.getElementById("refresh").classList.remove("busy");
 }
 
 function setup() {
