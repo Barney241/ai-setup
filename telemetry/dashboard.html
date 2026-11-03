@@ -198,6 +198,31 @@ dialog::backdrop { background: rgba(0, 0, 0, 0.6); }
       </section>
     </div>
 
+    <div class="columns" data-page="overview" hidden>
+      <section class="card">
+        <h2>Top tasks</h2>
+        <p class="note">The biggest sessions by tokens. Click one for its timeline.</p>
+        <div class="scroll" id="top-tasks"></div>
+      </section>
+      <section class="card">
+        <h2>Top bottlenecks</h2>
+        <p class="note">Commands, tools and waits ranked by total time. Click one for each run.</p>
+        <div class="scroll" id="top-blockers"></div>
+      </section>
+    </div>
+    <div class="columns" data-page="overview" hidden>
+      <section class="card">
+        <h2>Top failures</h2>
+        <p class="note">Grouped by tool and the first line of the error. The Reliability page has the full list.</p>
+        <div class="scroll" id="top-failures"></div>
+      </section>
+      <section class="card">
+        <h2>Tools by time</h2>
+        <p class="note">Total time each tool spent running, with how often it failed.</p>
+        <div class="scroll" id="top-tools"></div>
+      </section>
+    </div>
+
     <section data-page="reliability" hidden><div class="tiles" id="reliability-tiles"></div></section>
     <div class="columns" data-page="reliability" hidden>
       <section class="card">
@@ -732,8 +757,40 @@ const BLOCKER_COLUMNS = [
   { title: "p95", number: true, render: (row) => formatSeconds(row.p95_seconds), sort: (row) => row.p95_seconds },
 ];
 
+function renderTopTasks(rows) {
+  renderTable(document.getElementById("top-tasks"), "top-tasks", [
+    { title: "Task", wide: true, render: (row) => element("div", {}, element("span", { textContent: row.task || "(no title)" }), row.t3_title ? element("span", { className: "chip", textContent: "T3" }) : document.createTextNode(""), noteText(`${row.project || "unattributed"} · ${row.agent}`)), sort: (row) => row.task },
+    { title: "Tokens", number: true, render: (row) => formatCount(row.tokens), sort: (row) => row.tokens },
+    { title: "Spend", number: true, render: (row) => formatUsd(row.api_usd), sort: (row) => row.api_usd ?? 0 },
+    { title: "Failed", number: true, render: (row) => formatCount(row.tool_failures), sort: (row) => row.tool_failures },
+  ], rows.slice(0, 8), { onRow: (row) => openSession(row.session_id), empty: "No tasks in this window." });
+}
+
+function renderTopFailures(rows) {
+  renderTable(document.getElementById("top-failures"), "top-failures", [
+    { title: "Tool", render: (row) => element("span", { className: "mono nowrap", textContent: row.tool }), sort: (row) => row.tool },
+    { title: "Error", wide: true, render: (row) => row.message || "(no text)", sort: (row) => row.message },
+    { title: "Failures", number: true, render: (row) => formatCount(row.failures), sort: (row) => row.failures },
+    { title: "Sessions", number: true, render: (row) => formatCount(row.sessions), sort: (row) => row.sessions },
+  ], rows.slice(0, 8), { empty: "No failures in this window." });
+}
+
+function renderTopTools(rows) {
+  renderTable(document.getElementById("top-tools"), "top-tools", [
+    { title: "Tool", render: (row) => element("span", { className: "mono nowrap", textContent: row.tool }), sort: (row) => row.tool },
+    { title: "Time", number: true, render: (row) => formatMinutes(row.minutes), sort: (row) => row.minutes },
+    { title: "Calls", number: true, render: (row) => formatCount(row.calls), sort: (row) => row.calls },
+    { title: "Failed", number: true, render: (row) => formatPercent(ratio(row.failures, row.calls)), sort: (row) => ratio(row.failures, row.calls) ?? 0 },
+    { title: "p95", number: true, render: (row) => formatSeconds(row.p95_seconds), sort: (row) => row.p95_seconds },
+  ], rows, { empty: "No tool calls in this window." });
+}
+
 function renderBlockers(rows) {
   renderTable(document.getElementById("blockers"), "blockers", BLOCKER_COLUMNS, rows, { onRow: (row) => openBlocker(row), empty: "No blockers in this window." });
+}
+
+function renderTopBlockers(rows) {
+  renderTable(document.getElementById("top-blockers"), "top-blockers", BLOCKER_COLUMNS, rows, { onRow: (row) => openBlocker(row), empty: "No blockers in this window." });
 }
 
 function renderFailureTiles(summary, failureDaily, decisions, hookBlocks) {
@@ -985,12 +1042,16 @@ async function loadFilters() {
 
 const loaders = {
   async overview() {
-    const [summary, daily, projects, models] = await Promise.all([panel("summary"), panel("daily"), panel("projects"), panel("models")]);
+    const [summary, daily, projects, models, tasks, blockers, failures, tools] = await Promise.all([panel("summary"), panel("daily"), panel("projects"), panel("models"), panel("tasks"), panel("blockers"), panel("failures"), panel("tools")]);
     renderTiles(summary, daily);
     renderHeroes(daily);
     renderTimeBar(summary.find((row) => row.period === "current") ?? {});
     renderProjects(projects);
     renderModels(models);
+    renderTopTasks(tasks);
+    renderTopBlockers(blockers);
+    renderTopFailures(failures);
+    renderTopTools(tools);
   },
   async reliability() {
     const [summary, failureDaily, decisions, hookBlocks, failures, recent, blockers, coverage] = await Promise.all([panel("summary"), panel("failure_daily"), panel("decisions"), panel("hook_blocks"), panel("failures"), panel("failures_recent"), panel("blockers"), panel("coverage")]);
