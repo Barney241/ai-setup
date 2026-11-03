@@ -64,9 +64,32 @@ SELECT
     attrs['success'] = 'true' AS success,
     toUInt64OrZero(attrs['duration_ms']) AS duration_ms,
     if(event = 'codex.tool_result', attrs['arguments'], attrs['tool_input']) AS input,
-    attrs['output'] AS output
+    attrs['output'] AS output,
+    attrs['tool_use_id'] AS tool_use_id,
+    attrs['error_type'] AS error_type,
+    attrs['error'] AS error
 FROM ai.events
 WHERE event IN ('claude_code.tool_result', 'codex.tool_result');
+
+CREATE OR REPLACE VIEW ai.decisions AS
+SELECT
+    ts, host, agent, session_id, account,
+    attrs['tool_name'] AS tool,
+    attrs['decision'] AS decision,
+    attrs['source'] AS source,
+    JSONExtractString(attrs['tool_parameters'], 'full_command') AS command
+FROM ai.events
+WHERE event = 'claude_code.tool_decision';
+
+CREATE OR REPLACE VIEW ai.hook_blocks AS
+SELECT
+    Timestamp AS ts,
+    ResourceAttributes['host.name'] AS host,
+    LogAttributes['session.id'] AS session_id,
+    LogAttributes['hook'] AS hook,
+    LogAttributes['reason'] AS reason
+FROM otel.otel_logs
+WHERE ServiceName = 'ai-setup' AND Body = 'hook_block';
 
 CREATE OR REPLACE VIEW ai.skills AS
 SELECT
@@ -127,14 +150,18 @@ CREATE OR REPLACE VIEW ai.session_context AS
 SELECT
     session_id,
     argMax(project, ts) AS project,
-    argMax(branch, ts) AS branch
+    argMax(branch, ts) AS branch,
+    argMaxIf(t3_thread_id, ts, t3_thread_id != '') AS t3_thread_id,
+    argMaxIf(t3_title, ts, t3_title != '') AS t3_title
 FROM
 (
     SELECT
         Timestamp AS ts,
         LogAttributes['session.id'] AS session_id,
         LogAttributes['project'] AS project,
-        LogAttributes['branch'] AS branch
+        LogAttributes['branch'] AS branch,
+        LogAttributes['t3_thread_id'] AS t3_thread_id,
+        LogAttributes['t3_title'] AS t3_title
     FROM otel.otel_logs
     WHERE ServiceName = 'ai-setup' AND Body = 'session_context'
     UNION ALL
@@ -146,7 +173,9 @@ FROM
             extract(workdir, '/[.]t3/worktrees/([^/]+)/'),
             splitByChar('/', trimRight(workdir, '/'))[-1]
         ) AS project,
-        '' AS branch
+        '' AS branch,
+        '' AS t3_thread_id,
+        '' AS t3_title
     FROM
     (
         SELECT ts, session_id, JSONExtractString(input, 'workdir') AS workdir
@@ -169,6 +198,7 @@ SELECT
     s.tool_failures AS tool_failures,
     if(c.project = '', 'unattributed', c.project) AS project,
     c.branch AS branch,
+    c.t3_title AS t3_title,
     p.task AS task,
     r.total_tokens AS total_tokens,
     r.api_usd AS api_usd,
@@ -197,3 +227,30 @@ LEFT JOIN
     WHERE phase = 'tool'
     GROUP BY session_id
 ) AS t ON s.session_id = t.session_id;
+
+
+CREATE OR REPLACE VIEW ai.tool_failures AS
+SELECT
+    t.ts AS ts,
+    t.host AS host,
+    t.session_id AS session_id,
+    t.tool AS tool,
+    t.error_type AS error_type,
+    if(f.error != '', f.error, t.error) AS error,
+    if(f.command != '', f.command, substring(t.input, 1, 300)) AS command,
+    c.project AS project,
+    c.branch AS branch,
+    c.t3_title AS t3_title
+FROM ai.tools AS t
+LEFT JOIN
+(
+    SELECT
+        LogAttributes['tool_use_id'] AS tool_use_id,
+        any(LogAttributes['error']) AS error,
+        any(LogAttributes['command']) AS command
+    FROM otel.otel_logs
+    WHERE ServiceName = 'ai-setup' AND Body = 'tool_failure'
+    GROUP BY tool_use_id
+) AS f ON t.tool_use_id = f.tool_use_id
+LEFT JOIN ai.session_context AS c ON t.session_id = c.session_id
+WHERE t.agent = 'claude' AND NOT t.success;

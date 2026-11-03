@@ -1,0 +1,69 @@
+{
+  "model": "sonnet",
+  "effortLevel": "high",
+  "modelSettings": {
+    "claude-fable-5-1": {
+      "effortLevel": "high"
+    },
+    "claude-opus-5": {
+      "effortLevel": "high"
+    },
+    "claude-opus-5-5": {
+      "effortLevel": "medium"
+    }
+  },
+  "advisorModel": "opus",
+  "autoCompactEnabled": true,
+  "autoCompactWindow": 250000,
+  "autoMemoryEnabled": false,
+  "autoDreamEnabled": false,
+  "claudeMdExcludes": [
+    "**/.venv/**",
+    "**/site-packages/**",
+    "**/node_modules/**"
+  ],
+  "skillOverrides": {
+    "shannon-pentest": "off",
+    "team-lead-orchestrator": "off",
+    "instrument": "off",
+    "opik": "off",
+    "anthropic-skills:docs": "off",
+    "anthropic-skills:docx": "off",
+    "anthropic-skills:pptx": "off",
+    "anthropic-skills:xlsx": "off",
+    "anthropic-skills:pdf": "off",
+    "anthropic-skills:morning": "off",
+    "anthropic-skills:import-memory": "off",
+    "anthropic-skills:skill-creator": "off"
+  },
+  "worktree": {
+    "bgIsolation": "none"
+  },
+  "askUserQuestionTimeout": "never",
+  "skipWorkflowUsageWarning": true,
+  "env": {
+    "BASH_MAX_OUTPUT_LENGTH": "15000",
+    "MAX_MCP_OUTPUT_TOKENS": "10000"
+  },
+  "enabledPlugins": {
+    "github@claude-plugins-official": false,
+    "code-review@claude-plugins-official": false,
+    "superpowers@claude-plugins-official": false,
+    "slack@claude-plugins-official": false,
+    "frontend-design@claude-plugins-official": false,
+    "coderabbit@claude-plugins-official": false,
+    "context7@claude-plugins-official": false,
+    "caveman@caveman": false,
+    "security-guidance@claude-plugins-official": false,
+    "code-simplifier@claude-plugins-official": false,
+    "skill-creator@claude-plugins-official": false,
+    "playwright@claude-plugins-official": false,
+    "pr-review-toolkit@claude-plugins-official": false,
+    "claude-md-management@claude-plugins-official": false,
+    "claude-code-setup@claude-plugins-official": false,
+    "posthog@claude-plugins-official": false,
+    "feature-dev@claude-plugins-official": false,
+    "code-modernization@claude-plugins-official": false,
+    "stripe@claude-plugins-official": false
+  }
+}

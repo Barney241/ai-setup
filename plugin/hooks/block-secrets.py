@@ -6,6 +6,10 @@ import re
 import shlex
 import sys
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
+import otlp
+
 DUMPING_READERS = {
     "cat", "head", "tail", "less", "more", "bat", "view", "nl",
     "xxd", "od", "strings", "jq", "yq", "tac", "shuf", "base64",
@@ -37,7 +41,11 @@ def sensitivity(path):
     return None
 
 
+SESSION = {"id": ""}
+
+
 def block(what, hint=""):
+    otlp.emit("hook_block", {"session.id": SESSION["id"], "hook": "block-secrets", "reason": what})
     print(f"BLOCKED: Cannot read/edit {what}.", file=sys.stderr)
     print("Inspect its shape with grep/cut/awk on key names instead of dumping values.", file=sys.stderr)
     if hint:
@@ -89,6 +97,7 @@ def main():
     except ValueError:
         sys.exit(0)
     tool_input = payload.get("tool_input") or {}
+    SESSION["id"] = payload.get("session_id", "")
     if payload.get("tool_name") == "Bash":
         check_bash(tool_input.get("command") or "", payload.get("cwd") or os.getcwd())
     else:

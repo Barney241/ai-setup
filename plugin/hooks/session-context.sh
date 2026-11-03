@@ -15,9 +15,12 @@ case "$common" in
   *) project=$(basename "$cwd") ;;
 esac
 branch=$(git -C "$cwd" branch --show-current 2>/dev/null)
+t3_thread="${T3CODE_THREAD_ID:-}"
+t3_title=$(python3 "$(dirname "$0")/t3-title.py" 2>/dev/null)
 
 payload=$(jq -n \
   --arg session "$session" --arg project "$project" --arg branch "$branch" \
+  --arg t3_thread "$t3_thread" --arg t3_title "$t3_title" \
   --arg host "$(uname -n)" --arg now "$(date +%s%N)" '
   def attribute($name; $value): { key: $name, value: { stringValue: $value } };
   {
@@ -30,7 +33,9 @@ payload=$(jq -n \
           attributes: [
             attribute("session.id"; $session),
             attribute("project"; $project),
-            attribute("branch"; $branch)
+            attribute("branch"; $branch),
+            attribute("t3_thread_id"; $t3_thread),
+            attribute("t3_title"; $t3_title)
           ]
         }]
       }]

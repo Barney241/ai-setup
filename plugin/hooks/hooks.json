@@ -4,7 +4,27 @@
       {
         "matcher": "Read|Edit|MultiEdit|Write|NotebookEdit|Bash",
         "hooks": [
-          { "type": "command", "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/hooks/block-secrets.py\"" }
+          { "type": "command", "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/hooks/block-secrets.py\"", "timeout": 10 }
+        ]
+      },
+      {
+        "matcher": "Read|Bash",
+        "hooks": [
+          { "type": "command", "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/hooks/block-papercuts-dump.py\"", "timeout": 10 }
+        ]
+      }
+    ],
+    "PostToolUseFailure": [
+      {
+        "hooks": [
+          { "type": "command", "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/hooks/record-tool-failure.py\"", "timeout": 5 }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          { "type": "command", "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/session-context.sh\"", "timeout": 10 }
         ]
       }
     ],

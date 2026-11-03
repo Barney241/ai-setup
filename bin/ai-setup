@@ -12,6 +12,8 @@ STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/ai-setup"
 SKILL_TARGETS=("$HOME/.claude/skills" "$HOME/.agents/skills")
 AGENT_TARGET="$HOME/.claude/agents"
 GLOBAL_RULES="$AI_SETUP_DIR/global/AGENTS.md"
+MANAGED_CLAUDE_SETTINGS="$AI_SETUP_DIR/global/claude-settings.json"
+MANAGED_SETTINGS_MERGE="$AI_SETUP_DIR/global/merge-settings.jq"
 CLAUDE_SETTINGS="$HOME/.claude/settings.json"
 CODEX_CONFIG="$HOME/.codex/config.toml"
 CODEX_TELEMETRY_BEGIN="# ai-setup telemetry begin"
@@ -286,6 +288,40 @@ configure_claude_telemetry() {
   say "updated Claude telemetry settings"
 }
 
+merged_claude_settings() {
+  jq --slurpfile managed "$MANAGED_CLAUDE_SETTINGS" -f "$MANAGED_SETTINGS_MERGE" "$CLAUDE_SETTINGS"
+}
+
+claude_settings_in_sync() {
+  merged_claude_settings | jq -e --slurpfile current "$CLAUDE_SETTINGS" '. == $current[0]'
+}
+
+configure_claude_settings() {
+  local updated
+  [ -f "$MANAGED_CLAUDE_SETTINGS" ] || return 0
+  if [ -L "$CLAUDE_SETTINGS" ]; then
+    warn "skipping $CLAUDE_SETTINGS: it is a symlink"
+    return 0
+  fi
+  if [ ! -f "$CLAUDE_SETTINGS" ]; then
+    mkdir -p "$(dirname "$CLAUDE_SETTINGS")"
+    printf '{}\n' > "$CLAUDE_SETTINGS"
+  fi
+  updated="$(mktemp "$CLAUDE_SETTINGS.XXXXXX")"
+  if ! merged_claude_settings > "$updated"; then
+    unlink "$updated"
+    warn "could not parse $CLAUDE_SETTINGS; managed Claude settings not applied"
+    return 0
+  fi
+  if claude_settings_in_sync; then
+    unlink "$updated"
+    return 0
+  fi
+  chmod --reference="$CLAUDE_SETTINGS" "$updated"
+  mv "$updated" "$CLAUDE_SETTINGS"
+  say "updated managed Claude settings"
+}
+
 codex_telemetry_block() {
   local endpoint="$AI_SETUP_TELEMETRY_ENDPOINT"
   cat <<EOF
@@ -366,6 +402,7 @@ cmd_sync() {
   fast_forward
   cmd_link
   refresh_claude_plugin
+  configure_claude_settings
   register_codex_mcp
   register_antigravity_mcp
   configure_claude_telemetry
@@ -510,6 +547,8 @@ cmd_doctor() {
   check "codex global rules" points_into_checkout "$HOME/.codex/AGENTS.md"
   check "gemini global rules" points_into_checkout "$HOME/.gemini/GEMINI.md"
   has claude && check "claude plugin" sh -c 'claude plugin list 2>/dev/null | grep -q ai-setup@ai-setup'
+  [ ! -f "$MANAGED_CLAUDE_SETTINGS" ] || check "claude managed settings" \
+    claude_settings_in_sync
   if grep -qs 'hooks/load-project-direnv.sh' "$HOME/.claude/settings.json"; then
     printf '  WARN  ~/.claude/settings.json still runs load-project-direnv.sh; the ai-setup plugin runs it too\n'
   fi

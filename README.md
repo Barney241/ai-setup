@@ -69,6 +69,16 @@ skills live alongside. A new skill reaches every host without a rebuild.
 | `ai-setup report [name] [days]` | run a telemetry report, or list them |
 | `ai-setup query <sql>` | read-only SQL against the telemetry store |
 
+## Claude settings
+
+`global/claude-settings.json` holds the Claude Code settings every host shares:
+model, effort, compaction window, disabled plugins and similar. `ai-setup sync`
+merges it into `~/.claude/settings.json` with `global/merge-settings.jq`: a key
+the file defines overwrites the host's value, lists are unioned, objects merge,
+and every other key stays untouched. Nothing is ever removed. `ai-setup doctor`
+reports a host that has drifted. A project's own `.claude/settings.json` still
+wins over these defaults.
+
 ## Telemetry
 
 Claude Code, Codex and T3 Code export OpenTelemetry to one ClickHouse, so usage
@@ -100,7 +110,15 @@ Claude and Codex read them once at startup, so running sessions need a restart.
 Claude Code telemetry has no project field. A session-start hook in the plugin
 sends the repo and branch, reading the endpoint from `~/.claude/settings.json`
 because Claude does not pass `OTEL_*` variables to hooks. Codex projects come
-from `workdir` in its tool calls.
+from `workdir` in its tool calls. The same hook runs after every turn and adds
+the T3 Code thread id and title when `T3CODE_THREAD_ID` is set, so
+`ai.session_context` and `ai.tasks` carry `t3_title`.
+
+Claude Code logs only "Shell command failed" for a failed Bash call. A
+`PostToolUseFailure` hook sends the real error text and command, and the
+plugin's blocking hooks send a `hook_block` event with the hook name and
+reason. `ai.tool_failures`, `ai.decisions` and `ai.hook_blocks` expose them,
+and `ai-setup report failures` lists them with the thread title.
 
 Server, in the NixOS config of one always-on host:
 

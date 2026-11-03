@@ -29,7 +29,12 @@ worktrees of a repo share one file.
 
 - When you lose time to tooling mid-session, append one line (create the file
   if missing): `YYYY-MM-DD · symptom · fix`.
-- When tooling fails mysteriously, read this file first.
+- When tooling fails mysteriously, `grep -i <symptom keyword>` this file first.
+  Never read it whole: it costs tens of thousands of tokens and stays in
+  context. Entries older than the last two weeks move to
+  `~/Projects/papercuts/<repo>.archive.md`, searched the same way.
+- Three entries with the same symptom mean the fix belongs in a skill or
+  AGENTS.md: patch it there and archive the entries.
 
 ## Machine quirks
 

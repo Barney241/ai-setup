@@ -1,6 +1,7 @@
 SELECT
     project,
     branch,
+    t3_title AS thread,
     agent,
     host,
     task,
