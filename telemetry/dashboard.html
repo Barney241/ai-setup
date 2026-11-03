@@ -180,7 +180,7 @@ dialog::backdrop { background: rgba(0, 0, 0, 0.6); }
     <div class="columns" data-page="overview" hidden>
       <section class="card">
         <h2>Spending by project</h2>
-        <p class="note">Dollars are Claude's API-equivalent estimate, not your subscription cost; Codex reports none. Click a project to filter.</p>
+        <p class="note">Dollars are Claude's API-equivalent estimate, not your subscription cost; Codex reports none. Click a project for its tasks, blockers and failures.</p>
         <div class="scroll" id="projects"></div>
       </section>
       <section class="card">
@@ -261,6 +261,7 @@ dialog::backdrop { background: rgba(0, 0, 0, 0.6); }
 <dialog id="drawer" aria-labelledby="drawer-title">
   <div class="drawer-head">
     <div>
+      <button class="ghost" id="drawer-back" hidden>← Back</button>
       <h2 id="drawer-title"></h2>
       <div class="small" id="drawer-subtitle"></div>
     </div>
@@ -666,8 +667,8 @@ function renderTiles(rows, daily) {
     tile({ label: "Tool failure rate", value: formatPercent(failure(now)), current: failure(now), previous: failure(before), better: "down", points: true, status: bandStatus(failure(now), now.tool_calls ?? 0, 0.05, 0.1), hint: "Target below 5%", spark: sparkline(failureSpark) }),
     tile({ label: "API error rate", value: formatPercent(known(now, errors(now))), current: known(now, errors(now)), previous: known(before, errors(before)), better: "down", points: true, status: bandStatus(known(now, errors(now)), now.requests ?? 0, 0.01, 0.03), hint: "Target below 1%" }),
     tile({ label: "Done in one prompt", value: formatPercent(oneShot(now)), current: oneShot(now), previous: oneShot(before), better: "up", points: true, hint: "Tasks needing one prompt" }),
-    tile({ label: "First token, p95", value: formatSeconds(now.ttft_p95_ms == null ? null : now.ttft_p95_ms / 1000), current: now.ttft_p95_ms, previous: before.ttft_p95_ms, better: "down", hint: "Time to first token" }),
-    tile({ label: "Commits", value: formatCount(now.commits ?? 0), current: now.commits, previous: before.commits, better: "up", hint: `${formatCount(now.pull_requests ?? 0)} PRs, ${formatCount(now.lines_changed ?? 0)} lines changed` }),
+    tile({ label: "First token, p95", value: formatSeconds(now.ttft_p95_ms == null ? null : now.ttft_p95_ms / 1000), current: now.ttft_p95_ms, previous: before.ttft_p95_ms || null, better: "down", hint: "Time to first token" }),
+    tile({ label: "Commits", value: formatCount(now.commits ?? 0), current: now.commits, previous: known(before, before.commits), better: "up", hint: `${formatCount(now.pull_requests ?? 0)} PRs, ${formatCount(now.lines_changed ?? 0)} lines changed` }),
   );
 }
 
@@ -696,12 +697,12 @@ function setFilter(field, value) {
 function renderProjects(rows) {
   const peak = Math.max(1, ...rows.map((row) => row.tokens));
   renderTable(document.getElementById("projects"), "projects", [
-    { title: "Project", render: (row) => element("div", {}, element("button", { className: "link", textContent: row.project || "unattributed", onclick: () => setFilter("project", row.project || "unattributed") }), element("div", { className: "bar", style: `width:${(row.tokens / peak) * 100}%` })), sort: (row) => row.project },
+    { title: "Project", render: (row) => element("div", {}, element("div", { textContent: row.project || "unattributed" }), element("div", { className: "bar", style: `width:${(row.tokens / peak) * 100}%` })), sort: (row) => row.project },
     { title: "Tokens", number: true, render: (row) => formatCount(row.tokens), sort: (row) => row.tokens },
     { title: "Spend", number: true, render: (row) => formatUsd(row.api_usd), sort: (row) => row.api_usd ?? 0 },
     { title: "Tasks", number: true, render: (row) => formatCount(row.tasks), sort: (row) => row.tasks },
     { title: "Failed", number: true, render: (row) => formatPercent(ratio(row.tool_failures, row.tool_calls)), sort: (row) => ratio(row.tool_failures, row.tool_calls) ?? 0 },
-  ], rows, { empty: "No project data." });
+  ], rows, { onRow: openProject, empty: "No project data." });
 }
 
 function renderModels(rows) {
@@ -715,14 +716,16 @@ function renderModels(rows) {
   ], rows, { empty: "No model data." });
 }
 
+const BLOCKER_COLUMNS = [
+  { title: "What", wide: true, render: (row) => element("span", {}, element("span", { className: "mono", textContent: row.name }), element("span", { className: "chip", textContent: KIND_LABELS[row.kind] ?? row.kind })), sort: (row) => row.name },
+  { title: "Time", number: true, render: (row) => formatMinutes(row.minutes), sort: (row) => row.minutes },
+  { title: "Runs", number: true, render: (row) => formatCount(row.events), sort: (row) => row.events },
+  { title: "Failed", number: true, render: (row) => formatCount(row.failures), sort: (row) => row.failures },
+  { title: "p95", number: true, render: (row) => formatSeconds(row.p95_seconds), sort: (row) => row.p95_seconds },
+];
+
 function renderBlockers(rows) {
-  renderTable(document.getElementById("blockers"), "blockers", [
-    { title: "What", wide: true, render: (row) => element("span", {}, element("span", { className: "mono", textContent: row.name }), element("span", { className: "chip", textContent: KIND_LABELS[row.kind] ?? row.kind })), sort: (row) => row.name },
-    { title: "Time", number: true, render: (row) => formatMinutes(row.minutes), sort: (row) => row.minutes },
-    { title: "Runs", number: true, render: (row) => formatCount(row.events), sort: (row) => row.events },
-    { title: "Failed", number: true, render: (row) => formatCount(row.failures), sort: (row) => row.failures },
-    { title: "p95", number: true, render: (row) => formatSeconds(row.p95_seconds), sort: (row) => row.p95_seconds },
-  ], rows, { onRow: openBlocker, empty: "No blockers in this window." });
+  renderTable(document.getElementById("blockers"), "blockers", BLOCKER_COLUMNS, rows, { onRow: (row) => openBlocker(row), empty: "No blockers in this window." });
 }
 
 function renderFailureTiles(summary, failureDaily, decisions, hookBlocks) {
@@ -842,7 +845,10 @@ const drawer = document.getElementById("drawer");
 drawer.addEventListener("close", () => { state.session = ""; syncUrl(); });
 document.getElementById("drawer-close").onclick = () => drawer.close();
 
-function openDrawer(title, subtitle, nodes) {
+function openDrawer(title, subtitle, nodes, back) {
+  const backButton = document.getElementById("drawer-back");
+  backButton.hidden = !back;
+  backButton.onclick = back ?? null;
   document.getElementById("drawer-title").textContent = title;
   document.getElementById("drawer-subtitle").textContent = subtitle;
   document.getElementById("drawer-body").replaceChildren(...nodes);
@@ -853,7 +859,7 @@ function fact(label, value) {
   return element("div", {}, element("strong", { textContent: value }), label);
 }
 
-async function openSession(sessionId) {
+async function openSession(sessionId, back) {
   state.session = sessionId;
   syncUrl();
   try {
@@ -870,21 +876,59 @@ async function openSession(sessionId) {
     const facts = summary ? element("div", { className: "facts" },
       fact("duration", formatMinutes(summary.minutes)), fact("prompts", formatCount(summary.prompts)), fact("tool calls", formatCount(summary.tool_calls)),
       fact("failed tools", formatCount(summary.tool_failures)), fact("tokens", formatCount(summary.tokens)), fact("spend", formatUsd(summary.api_usd))) : document.createTextNode("");
-    openDrawer(summary?.task || "Session", summary ? `${summary.project || "unattributed"} · ${summary.branch || "no branch"} · ${summary.agent} on ${summary.host} · ${summary.started_at}` : sessionId, [facts, ...(timeline.length ? timeline : [element("div", { className: "empty", textContent: "No recorded steps." })])]);
+    openDrawer(summary?.task || "Session", summary ? `${summary.project || "unattributed"} · ${summary.branch || "no branch"} · ${summary.agent} on ${summary.host} · ${summary.started_at}` : sessionId, [facts, ...(timeline.length ? timeline : [element("div", { className: "empty", textContent: "No recorded steps." })])], back);
   } catch (error) { showError(error); }
 }
 
-async function openBlocker(row) {
+async function openBlocker(row, extra = {}, back) {
   try {
-    const runs = await panel("blocker_runs", { kind: row.kind, name: row.name });
+    const runs = await panel("blocker_runs", { kind: row.kind, name: row.name, ...extra });
     const holder = element("div", { className: "scroll" });
     renderTable(holder, `runs-${row.kind}-${row.name}`, [
       { title: "When", render: (run) => noteText(run.at), sort: (run) => run.at },
       { title: "Detail", wide: true, render: (run) => element("div", {}, element("div", { className: "mono", textContent: run.detail || row.name }), noteText(`${run.project || "unattributed"} · ${run.task || ""}`)) },
       { title: "Duration", number: true, render: (run) => formatSeconds(run.seconds), sort: (run) => run.seconds },
       { title: "Failed", number: true, render: (run) => run.failed ? "✕" : "", sort: (run) => run.failed },
-    ], runs, { onRow: (run) => openSession(run.session_id), empty: "No runs." });
-    openDrawer(row.name, `${KIND_LABELS[row.kind] ?? row.kind} · ${formatMinutes(row.minutes)} over ${formatCount(row.events)} runs`, [holder]);
+    ], runs, { onRow: (run) => openSession(run.session_id, () => openBlocker(row, extra, back)), empty: "No runs." });
+    openDrawer(row.name, `${KIND_LABELS[row.kind] ?? row.kind} · ${formatMinutes(row.minutes)} over ${formatCount(row.events)} runs`, [holder], back);
+  } catch (error) { showError(error); }
+}
+
+function drawerSection(title, note, node) {
+  return element("div", {}, element("h2", { textContent: title }), element("p", { className: "note", textContent: note }), node);
+}
+
+async function openProject(row) {
+  const name = row.project || "unattributed";
+  const MAX_TASKS = 15;
+  try {
+    const [blockers, tasks, failures] = await Promise.all([panel("blockers", { project: name }), panel("tasks", { project: name }), panel("failures", { project: name })]);
+    const back = () => openProject(row);
+    const table = (id, columns, rows, options) => { const holder = element("div", { className: "scroll" }); renderTable(holder, id, columns, rows, options); return holder; };
+    const facts = element("div", { className: "facts" },
+      fact("tokens", formatCount(row.tokens)), fact("spend", formatUsd(row.api_usd)), fact("tasks", formatCount(row.tasks)),
+      fact("tool calls", formatCount(row.tool_calls)), fact("failed", formatPercent(ratio(row.tool_failures, row.tool_calls))), fact("tool time", formatMinutes(row.tool_minutes)));
+    const filterButton = element("button", { className: "btn", textContent: "Filter the dashboard to this project", onclick: () => { drawer.close(); setFilter("project", name); } });
+    openDrawer(name, `Last ${state.days} days`, [
+      facts,
+      filterButton,
+      drawerSection("Biggest blockers", "Commands, tools and waits that cost this project the most time. Click one for each run.",
+        table("project-blockers", BLOCKER_COLUMNS, blockers, { onRow: (blocker) => openBlocker(blocker, { project: name }, back), empty: "No blockers in this window." })),
+      drawerSection("Top failures", "Grouped by tool and the first line of the error.",
+        table("project-failures", [
+          { title: "Tool", render: (failure) => element("span", { className: "mono nowrap", textContent: failure.tool }), sort: (failure) => failure.tool },
+          { title: "Error", wide: true, render: (failure) => failure.message || "(no text)", sort: (failure) => failure.message },
+          { title: "Failures", number: true, render: (failure) => formatCount(failure.failures), sort: (failure) => failure.failures },
+        ], failures, { empty: "No failures in this window." })),
+      drawerSection("Tasks", tasks.length > MAX_TASKS ? `The ${MAX_TASKS} biggest of ${tasks.length}, by tokens. Click one for its timeline.` : "By tokens. Click one for its timeline.",
+        table("project-tasks", [
+          { title: "Task", wide: true, render: (task) => element("div", {}, element("span", { textContent: task.task || "(no title)" }), task.t3_title ? element("span", { className: "chip", textContent: "T3" }) : document.createTextNode(""), noteText(`${task.branch || "no branch"} · ${task.started_at}`)), sort: (task) => task.task },
+          { title: "Duration", number: true, render: (task) => formatMinutes(task.minutes), sort: (task) => task.minutes },
+          { title: "Tokens", number: true, render: (task) => formatCount(task.tokens), sort: (task) => task.tokens },
+          { title: "Spend", number: true, render: (task) => formatUsd(task.api_usd), sort: (task) => task.api_usd ?? 0 },
+          { title: "Failed", number: true, render: (task) => formatCount(task.tool_failures), sort: (task) => task.tool_failures },
+        ], tasks.slice(0, MAX_TASKS), { onRow: (task) => openSession(task.session_id, back), empty: "No tasks." })),
+    ]);
   } catch (error) { showError(error); }
 }
 
