@@ -20,6 +20,22 @@ keeping goes into a skill in ai-setup (if it holds in any repo), into the
 project's `AGENTS.md` or `.agents/ai-setup.md` (if it is specific to one repo),
 or into the papercuts log. Propose the exact edit instead of writing memory.
 
+## Where files may live
+
+Never create directories or files in the home directory, `~/Projects`, or any
+of its subfolders unless the user asks for that exact project. Sessions must
+not scatter clones, scripts, scratch repos, or `<repo>-worktrees` folders
+there. The one standing exception is the papercuts log in `~/Projects/papercuts`.
+
+- Git worktrees go in `~/.t3/worktrees/<repo>/<name>`, the folder T3 uses. Never
+  next to the repo, inside `~/Projects`, or in the repo's own `.claude/worktrees`.
+- Throwaway work (scripts, experiments, clones for inspection, downloads,
+  build output, test fixtures) goes in `$TMPDIR` or `/tmp/claude/<job>`.
+- Anything meant to outlive the session and not tied to a repo is a question
+  for the user, never a new folder in `~/Projects`.
+- Remove worktrees and temp folders you created once their work is merged or
+  abandoned: `git worktree remove`, then `git worktree prune`.
+
 ## Papercuts
 
 Each project has a log at `~/Projects/papercuts/<repo>.md` of anything that
