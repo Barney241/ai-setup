@@ -14,7 +14,7 @@
   },
   "advisorModel": "opus",
   "autoCompactEnabled": true,
-  "autoCompactWindow": 250000,
+  "autoCompactWindow": 300000,
   "autoMemoryEnabled": false,
   "autoDreamEnabled": false,
   "claudeMdExcludes": [
