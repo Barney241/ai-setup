@@ -10,5 +10,13 @@ if [ -n "$main" ] && [ "$main" != "$PWD" ]; then
   fi
   cmp -s "$main/.envrc" .envrc && direnv allow .
 fi
-exports=$(direnv export zsh 2>/dev/null)
-[ -n "$exports" ] && printf '%s\n' "$exports" > "$CLAUDE_ENV_FILE"
+errors=$(mktemp)
+exports=$(direnv export zsh 2>"$errors")
+if [ -z "$exports" ]; then
+  echo "dev shell not loaded in $PWD: $(tail -n 3 "$errors" | tr '\n' ' ')" >&2
+  echo "A sandboxed shell cannot build a cold flake cache. Run once with the sandbox disabled: direnv exec . true" >&2
+  rm -f "$errors"
+  exit 0
+fi
+rm -f "$errors"
+printf '%s\n' "$exports" >> "$CLAUDE_ENV_FILE"
