@@ -29,7 +29,8 @@ Sol seat only. One `delegate_task` per seat, `role: "review"`, async, each
 covering all the PRs. A very large PR may get its own delegate per seat.
 
 A seat that is unavailable or out of quota is reported as missing. Never
-substitute a model.
+substitute a model. The Gemini seat needs `runtimeMode: "full-access"`, as
+`council` explains.
 
 Brief every delegate with: read-only (no edits, no PR comments, no
 checkout of a PR branch), the pinned SHAs, how to read, the

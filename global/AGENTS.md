@@ -86,6 +86,10 @@ Resolve model IDs from `orchestrator_capabilities` every time. Never hardcode
 them. If a seat's provider is unavailable or unauthenticated, report the seat
 as missing. Never substitute another model.
 
+The `antigravity` provider has no `auto` runtime mode. Delegate to it with
+`runtimeMode: "full-access"`, or its reviewer stops for approval on every
+operation.
+
 ## Asking the user
 
 When you are working unattended (full send, full stop, babysitting), a

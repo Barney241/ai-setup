@@ -18,6 +18,17 @@ In T3 Code, use `orchestrator_capabilities` to resolve the models, then
 the harness's subagent tools. If you cannot reach three providers, or a named
 member is unavailable, report it instead of substituting.
 
+Start the `antigravity` delegate with `runtimeMode: "full-access"`. That
+provider has no `auto` mode (only `approval-required`, `auto-accept-edits`,
+`full-access`), so an inherited `auto` leaves it stopping for approval on every
+operation, and a stopped reviewer is a missing review. Check the modes in
+`orchestrator_capabilities` first. T3 rejects a child mode above the calling
+thread's own: if `full-access` is rejected, report the Gemini seat as blocked
+and tell the user to raise the thread to full access. Do not fall back to a
+supervised child. Full access removes the sandbox, so the read-only rule is
+carried by the brief: the delegate reads PRs with `gh` and `git show` and runs
+anything in its own scratch worktree.
+
 Give each delegate the request and relevant context. For review or feedback,
 keep their work read-only. Collect their responses and summarize the useful
 findings, disagreements, and recommended next steps.
