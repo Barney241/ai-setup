@@ -17,6 +17,8 @@ let
     AI_SETUP_TELEMETRY_ENDPOINT = lib.optionalString (cfg.telemetry.endpoint != null) cfg.telemetry.endpoint;
     AI_SETUP_TELEMETRY_QUERY_URL = lib.optionalString (cfg.telemetry.queryUrl != null) cfg.telemetry.queryUrl;
     AI_SETUP_TELEMETRY_CONTENT = lib.boolToString cfg.telemetry.content;
+    AI_SETUP_HUB_URL = lib.optionalString (cfg.hub.url != null) cfg.hub.url;
+    AI_SETUP_HUB_KEY_FILE = cfg.hub.observerKeyFile;
   };
 
   playwrightEnv = lib.optionalAttrs cfg.playwright.enable {
@@ -102,6 +104,22 @@ in
         type = lib.types.bool;
         default = false;
         description = "Also export prompts, responses and tool input and output. They can contain secrets and client code.";
+      };
+    };
+
+    hub = {
+      url = lib.mkOption {
+        type = lib.types.nullOr lib.types.str;
+        default = null;
+        example = "https://server.example-tailnet.ts.net:8317";
+        description = "Base URL of CLIProxy Hub. Turns on `ai-setup hub` and the hub MCP server. Null leaves both off.";
+      };
+
+      observerKeyFile = lib.mkOption {
+        type = lib.types.str;
+        default = "${config.xdg.configHome}/ai-setup/hub-observer-key";
+        defaultText = lib.literalExpression ''"''${config.xdg.configHome}/ai-setup/hub-observer-key"'';
+        description = "File holding the hub's read-only observer key. Never the management key.";
       };
     };
   };
