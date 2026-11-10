@@ -1,3 +1,4 @@
+import http.client
 import json
 import os
 import sys
@@ -19,9 +20,12 @@ class HubUnreachable(Exception):
 
 def observer_key():
     try:
-        return KEY_FILE.read_text().strip()
+        key = KEY_FILE.read_text().strip()
     except OSError as error:
         raise HubUnreachable(f"cannot read the hub observer key at {KEY_FILE}: {error.strerror}") from error
+    if not key or any(character.isspace() for character in key):
+        raise HubUnreachable(f"the hub observer key at {KEY_FILE} must be one line without spaces")
+    return key
 
 
 def send(message):
@@ -37,7 +41,7 @@ def send(message):
             body = response.read()
     except urllib.error.HTTPError as error:
         raise HubUnreachable(f"the hub answered {error.code}: {error.read().decode(errors='replace')[:300]}") from error
-    except (urllib.error.URLError, TimeoutError) as error:
+    except (OSError, http.client.HTTPException) as error:
         raise HubUnreachable(f"cannot reach the hub at {HUB_URL}: {error}") from error
     return json.loads(body) if body else None
 
