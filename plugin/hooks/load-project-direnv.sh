@@ -19,4 +19,4 @@ if [ -z "$exports" ]; then
   exit 0
 fi
 rm -f "$errors"
-printf '%s\n' "$exports" >> "$CLAUDE_ENV_FILE"
+printf '%s\n' "$exports" > "$CLAUDE_ENV_FILE"
