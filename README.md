@@ -30,6 +30,7 @@ sentence: "modernize #123, sol loop, full stop".
 | `cut-release` | "cut a release" | Version, gates that mirror prod, tag, notes, deploy, health checks. |
 | `retro` | "retro" | Why did the agent do that? A better next prompt, and a patch to the skill. |
 | `fleet-analytics` | "fleet analytics", "how much did I use" | Answers usage questions from the fleet telemetry store. |
+| `proxy-hub` | "proxy hub", "cliproxy" | Answers quota, usage and failure questions from CLIProxy Hub, my LLM proxy. |
 | `harness-guards` | (automatic) | What to do when the sandbox, a worktree guard or dcg rejects a command. |
 | `agent-report` | (automatic) | Coverage block for investigation subagents. |
 | `leaving-pr-comments` | (automatic) | Format for comments an agent posts on my behalf. |
@@ -68,6 +69,7 @@ skills live alongside. A new skill reaches every host without a rebuild.
 | `ai-setup status` / `doctor` | checkout state and last sync / tools, auth, links, telemetry |
 | `ai-setup report [name] [days]` | run a telemetry report, or list them |
 | `ai-setup query <sql>` | read-only SQL against the telemetry store |
+| `ai-setup hub [tool] [name=value …]` | ask the proxy hub, or list its tools |
 
 ## Claude settings
 
@@ -171,6 +173,23 @@ it typed columns and one shape across agents, and because they are views a
 schema change applies to history too. See
 [`telemetry/schema.sql`](telemetry/schema.sql) and
 [`telemetry/reports`](telemetry/reports).
+
+## Proxy hub
+
+[CLIProxy Hub](skills/proxy-hub/SKILL.md) is my LLM proxy, a private fork of
+CLIProxyAPI that runs on one always-on host. Its server module ships with the
+fork. This repo carries the client side, and all of it stays off until a host
+sets the URL:
+
+```nix
+programs.ai-setup.hub.url = "https://server.example-tailnet.ts.net:8317";
+```
+
+`ai-setup sync` then registers the `cliproxy-hub` MCP server for Claude, Codex
+and Antigravity, and `ai-setup hub` answers in a shell: health, accounts and
+their quota, usage, recent requests. Both are read-only and use the hub's
+observer key from `~/.config/ai-setup/hub-observer-key`. The management key
+never goes on an agent's host.
 
 ## Install
 
