@@ -65,6 +65,10 @@ points_into_checkout() {
   return 1
 }
 
+session_env_files_are_small() {
+  [ -z "$(find "$HOME/.claude/session-env" -name '*.sh' -size +64k 2>/dev/null | head -n 1)" ]
+}
+
 place_link() {
   local source="$1" target="$2"
   if points_into_checkout "$target" && [ "$(readlink "$target")" = "$source" ]; then
@@ -552,6 +556,7 @@ cmd_doctor() {
   if grep -qs 'hooks/load-project-direnv.sh' "$HOME/.claude/settings.json"; then
     printf '  WARN  ~/.claude/settings.json still runs load-project-direnv.sh; the ai-setup plugin runs it too\n'
   fi
+  check "claude session env files under 64KB (larger ones end in E2BIG on every Bash call)" session_env_files_are_small
   [ -n "$AI_SETUP_TELEMETRY_ENDPOINT" ] || return 0
   printf 'telemetry\n'
   check "claude export configured" grep -qF "$AI_SETUP_TELEMETRY_ENDPOINT" "$CLAUDE_SETTINGS"

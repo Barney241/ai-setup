@@ -1,6 +1,6 @@
 ---
 name: harness-guards
-description: Use when a shell command is rejected by the sandbox, a worktree guard, a permission rule, or dcg, before running a long or background job, and when working across git worktrees.
+description: Use when a shell command is rejected by the sandbox, a worktree guard, a permission rule, or dcg, when every Bash call fails with E2BIG, before running a long or background job, and when working across git worktrees.
 ---
 
 # Harness guards
@@ -55,6 +55,27 @@ string.
   started with the bypass. Watch the job's log file, not `pgrep`.
 - Long jobs that need the bypass: see the machine quirks in the global rules
   (`setsid nohup … & disown` from a foreground call, then watch the log).
+
+## E2BIG on every Bash call
+
+Each Bash call carries two things in one argument, capped near 128KB: the
+session's env files (`~/.claude/session-env/<session>/*.sh`, written by
+SessionStart hooks) and the sandbox profile. The error prints the size. Find
+which one grew before changing anything:
+
+- The size climbs after each restart, resume or compaction, or the call fails
+  with the sandbox bypass too: a hook is appending to `CLAUDE_ENV_FILE`.
+  `wc -c ~/.claude/session-env/<session>/*.sh` shows it, and
+  `ai-setup doctor` flags it on any host. Never read those files: they hold
+  exported tokens. Restarting adds another copy. Fix the hook so it writes
+  the same small content on every start, then keep only the last line of the
+  large file.
+- Only sandboxed calls fail and the size tracks the number of registered
+  worktrees: prune finished worktrees, then start a fresh session.
+
+A hook that loads a dev shell writes the export to a file of its own and
+leaves one `source` line in `CLAUDE_ENV_FILE`, as `load-project-direnv.sh`
+does, so its share of the argument stays constant.
 
 ## Processes
 
