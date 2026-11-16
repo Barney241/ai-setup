@@ -54,7 +54,7 @@ string.
 - A sandboxed command has its own PID namespace and cannot see processes
   started with the bypass. Watch the job's log file, not `pgrep`.
 - Long jobs that need the bypass: see the machine quirks in the global rules
-  (`setsid nohup … & disown` from a foreground call, then watch the log).
+  (`setsid nohup … & disown` from a foreground call, then one Monitor call until its `.done` file exists, never a sleep loop).
 
 ## E2BIG on every Bash call
 

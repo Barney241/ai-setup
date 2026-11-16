@@ -86,7 +86,18 @@ in
         mysql_port."@remove" = "1";
         postgresql_port."@remove" = "1";
         interserver_http_port."@remove" = "1";
-      };
+        trace_log."@remove" = "1";
+        processors_profile_log."@remove" = "1";
+      } // lib.genAttrs [
+        "query_log"
+        "part_log"
+        "metric_log"
+        "asynchronous_metric_log"
+        "query_metric_log"
+        "query_views_log"
+        "error_log"
+        "text_log"
+      ] (_: { ttl = "event_date + INTERVAL 7 DAY DELETE"; });
       usersConfig = {
         profiles.agent = {
           readonly = 2;
@@ -107,6 +118,9 @@ in
             grants.query = [
               "GRANT SELECT ON ai.*"
               "GRANT SELECT ON otel.*"
+              "GRANT SELECT ON system.parts"
+              "GRANT SELECT ON system.tables"
+              "GRANT SELECT ON system.columns"
             ];
           };
         };

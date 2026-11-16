@@ -57,8 +57,12 @@ worktrees of a repo share one file.
 - `run_in_background: true` Bash calls stay sandboxed even with
   `dangerouslyDisableSandbox`. For a long job that needs the bypass, start it
   detached from a foreground call
-  (`setsid nohup … > /tmp/claude/<job>.log 2>&1 < /dev/null & disown`) and
-  watch the log.
+  (`setsid nohup bash -c '…; touch /tmp/claude/<job>.done' >
+  /tmp/claude/<job>.log 2>&1 < /dev/null & disown`), then wait with one Monitor call whose
+  until-condition is the `.done` file. Never poll from a Bash call with `sleep`, `until` or
+  `for i in $(seq …)` loops: they keep the session alive for hours and re-read
+  its whole context on every turn. A T3 restart or reboot kills detached jobs,
+  so a missing `.done` after a restart means rerun, not wait.
 - An exported `GH_TOKEN` may be a fine-grained PAT. Fine-grained PATs cannot be
   granted Checks access, so CheckRun and `statusCheckRollup.contexts` reads come
   back FORBIDDEN. Run those reads (including `pr-wait` and `gh pr checks`) with
@@ -83,12 +87,15 @@ Claude is the main driver. Other providers review, never drive.
 | Council | `claudeAgent`, `codex`, `antigravity` | latest Claude Opus, latest GPT Sol, latest Gemini Pro | high |
 
 Resolve model IDs from `orchestrator_capabilities` every time. Never hardcode
-them. If a seat's provider is unavailable or unauthenticated, report the seat
-as missing. Never substitute another model.
+them. If a seat's provider is unavailable, unauthenticated or out of quota
+(a usage-limit error), report the seat as missing. Never substitute another
+model, and never retry a seat that failed on quota in the same round.
 
 The `antigravity` provider has no `auto` runtime mode. Delegate to it with
 `runtimeMode: "full-access"`, or its reviewer stops for approval on every
-operation.
+operation. T3 refuses a child mode broader than its parent thread, so check
+the parent's mode first: under an `auto` parent, do not launch the seat at
+all. Report it as blocked and ask the user to raise the thread to full access.
 
 ## Asking the user
 

@@ -43,7 +43,7 @@ TOOLS = [
 
 
 def ai_setup(*args):
-    result = subprocess.run(["ai-setup", *args], capture_output=True, text=True)
+    result = subprocess.run(["ai-setup", *args], capture_output=True, encoding="utf-8", errors="replace")
     failed = result.returncode != 0
     return (result.stdout + result.stderr if failed else result.stdout), failed
 
