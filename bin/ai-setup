@@ -598,6 +598,14 @@ cmd_doctor() {
   check "codex export configured" grep -qxF "$CODEX_TELEMETRY_BEGIN" "$CODEX_CONFIG"
   check "ingest reachable" curl --silent --output /dev/null --max-time 5 "$AI_SETUP_TELEMETRY_ENDPOINT/v1/logs"
   check "store reachable" telemetry_request 'SELECT 1'
+  check "reports return valid UTF-8" reports_are_utf8
+}
+
+reports_are_utf8() {
+  local file
+  for file in "$AI_SETUP_DIR"/telemetry/reports/*.sql; do
+    cmd_report "$(basename "$file" .sql)" 7 | iconv -f UTF-8 -t UTF-8 >/dev/null || return 1
+  done
 }
 
 main() {
