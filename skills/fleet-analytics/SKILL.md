@@ -1,6 +1,6 @@
 ---
 name: fleet-analytics
-description: Use when the user asks about agent usage across the fleet: tokens, cost, cache hit rate, tool or skill use, session history, what was prompted, failures, or "how much did I use". Also use when they say "fleet analytics" or "telemetry".
+description: Use for agent usage across the fleet (tokens, cost, cache, tool or skill use, sessions, prompts, failures, "how much did I use") and for "fleet analytics" or "telemetry".
 ---
 
 # Fleet analytics
@@ -75,6 +75,9 @@ Raw data is in `otel.otel_logs`, `otel.otel_traces` and `otel.otel_metrics_*`.
   tool calls for Codex. A session that has neither is `unattributed`.
 - A command started in the background returns at once, so its real run time is
   not in `duration_ms`. The later wait on it is a tool call of its own.
+- A foreground call that spans a host reboot or T3 restart records hours. Filter
+  `duration_ms <= 600000` before summing foreground time, or a few such rows
+  dominate the `blockers` and `timings` totals.
 - `one_prompt_sessions` in the `skills` report is a proxy for needing no human
   help. It is not proof of a merged PR.
 - Prompts and tool output are stored with common secret formats masked. The

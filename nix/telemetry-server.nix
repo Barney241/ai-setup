@@ -11,6 +11,7 @@ let
     "github_pat_[A-Za-z0-9_]{20,}"
     "xox[abprs]-[A-Za-z0-9-]{10,}"
     "AKIA[0-9A-Z]{16}"
+    "x(key|smtp)sib-[A-Za-z0-9-]{20,}"
     "eyJ[A-Za-z0-9_-]{10,}[.][A-Za-z0-9_-]{10,}[.][A-Za-z0-9_-]{10,}"
   ];
 

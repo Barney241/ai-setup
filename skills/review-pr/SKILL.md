@@ -1,6 +1,6 @@
 ---
 name: review-pr
-description: Use when the user says "review pr", "review these prs" or hands over one or more PR links to review with the council or Sol. Findings are shown first and posted only on the user's go, as inline comments on the affected code.
+description: Use for "review pr", "review these prs", or PR links to review with the council or Sol. Findings are shown first and posted as inline comments only on the user's go.
 ---
 
 # review-pr

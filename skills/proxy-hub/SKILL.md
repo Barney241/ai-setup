@@ -1,6 +1,6 @@
 ---
 name: proxy-hub
-description: Use when the user asks about the proxy hub or CLI proxy: quota left, when an account resets, who used what, which account served a request, a 401, 429 or 503 through the proxy, adding a user or an account, or turning the hub on. Also use when they say "proxy hub" or "cliproxy".
+description: Use for "proxy hub" or "cliproxy" questions: quota left, account resets, who used what, which account served a request, a 401/429/503 through it, adding users or accounts, turning it on.
 ---
 
 # Proxy hub

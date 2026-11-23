@@ -12,6 +12,12 @@
         "hooks": [
           { "type": "command", "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/hooks/block-papercuts-dump.py\"", "timeout": 10 }
         ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          { "type": "command", "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/hooks/block-sleep-poll.py\"", "timeout": 10 }
+        ]
       }
     ],
     "PostToolUseFailure": [

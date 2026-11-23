@@ -59,7 +59,9 @@ worktrees of a repo share one file.
   detached from a foreground call
   (`setsid nohup bash -c '…; touch /tmp/claude/<job>.done' >
   /tmp/claude/<job>.log 2>&1 < /dev/null & disown`), then wait with one Monitor call whose
-  until-condition is the `.done` file. Never poll from a Bash call with `sleep`, `until` or
+  until-condition is the `.done` file. In a repo with an `.envrc`, run the job as
+  `direnv exec <worktree> …` inside that `bash -c`: a detached shell does not inherit the
+  dev shell, so tools like linters are missing or stale. Never poll from a Bash call with `sleep`, `until` or
   `for i in $(seq …)` loops: they keep the session alive for hours and re-read
   its whole context on every turn. A T3 restart or reboot kills detached jobs,
   so a missing `.done` after a restart means rerun, not wait.
