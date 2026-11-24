@@ -4,96 +4,119 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Fleet agents</title>
-<link rel="icon" href="data:,">
+<link rel="icon" href="lab-ui/favicon.svg">
+<link rel="stylesheet" href="lab-ui/tokens.css">
 <style>
 :root {
-  color-scheme: dark;
-  --page: #09090b;
-  --surface: #101113;
-  --surface-2: #17181b;
-  --surface-3: #1f2023;
-  --line: #1e2023;
-  --line-strong: #2c2e33;
-  --text: #ededef;
-  --text-2: #a1a1aa;
-  --muted: #71717a;
-  --accent: #70b8ff;
+  --surface-2: var(--surface-raised);
+  --surface-3: var(--surface-hover);
+  --line: var(--border);
+  --line-strong: var(--border-strong);
+  --text-2: var(--text-secondary);
+  --muted: var(--text-muted);
+  --watch: var(--warning);
+  --poor: var(--critical);
   --claude: #d95926;
   --codex: #3987e5;
   --previous: #696e77;
-  --time-model: #199e70;
-  --time-tools: #c98500;
-  --time-wait: #9085e9;
-  --good: #71d083;
-  --watch: #ffca16;
-  --poor: #ff9592;
+  --time-model: var(--series-3);
+  --time-tools: var(--series-5);
+  --time-wait: var(--series-2);
 }
 * { box-sizing: border-box; }
-body { margin: 0; background: var(--page); color: var(--text); font: 14px/1.45 Inter, system-ui, -apple-system, "Segoe UI", sans-serif; -webkit-font-smoothing: antialiased; }
+html { background: var(--page); }
+body { margin: 0; min-height: 100vh; background: radial-gradient(1100px 560px at 80% -12%, var(--page-glow), transparent 62%), var(--page); background-attachment: fixed; color: var(--text); font: 14px/1.5 var(--font); -webkit-font-smoothing: antialiased; }
 button, select, input { font: inherit; color: inherit; }
 button { cursor: pointer; }
-:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-.app { display: grid; grid-template-columns: 248px minmax(0, 1fr); min-height: 100vh; }
-.side { position: sticky; top: 0; height: 100vh; padding: 22px 12px; display: flex; flex-direction: column; gap: 28px; }
-.brand { display: flex; align-items: center; gap: 12px; padding: 0 10px; font-weight: 700; font-size: 17px; letter-spacing: -0.01em; }
-.brand i { width: 36px; height: 36px; border-radius: 10px; background: var(--surface-2); border: 1px solid var(--line-strong); display: grid; place-items: center; }
-.nav { display: grid; gap: 4px; }
-.nav button { display: flex; align-items: center; gap: 12px; border: 0; background: none; color: var(--text-2); padding: 11px 12px; border-radius: 10px; text-align: left; font-size: 14px; }
-.nav button:hover { background: var(--surface); color: var(--text); }
-.nav button[aria-current="page"] { background: var(--surface-3); color: var(--text); font-weight: 600; }
-.nav svg, .icon { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; flex: none; }
-.side-foot { margin-top: auto; padding: 0 12px; color: var(--muted); font-size: 12px; }
-main { padding: 34px 40px 64px; min-width: 0; display: grid; gap: 20px; align-content: start; transition: opacity 120ms; }
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.app { display: grid; grid-template-columns: 232px minmax(0, 1fr); min-height: 100vh; background: linear-gradient(to right, var(--sidebar) 231px, var(--border) 231px 232px, transparent 232px); }
+.side { position: sticky; top: 0; height: 100vh; padding: 18px 12px; display: flex; flex-direction: column; gap: 22px; }
+.brand { display: flex; align-items: center; gap: 10px; padding: 2px 8px; }
+.brand i { width: 30px; height: 30px; border-radius: 9px; display: grid; place-items: center; color: #fff; background: linear-gradient(135deg, var(--series-1), var(--series-2)); box-shadow: 0 4px 14px var(--accent-soft); flex: none; }
+.brand i .icon { width: 17px; height: 17px; }
+.brand-name { display: grid; line-height: 1.25; }
+.brand-name strong { font-weight: 650; letter-spacing: -0.01em; }
+.brand-name span { font-size: 11.5px; color: var(--text-muted); }
+.nav { display: flex; flex-direction: column; gap: 2px; }
+.nav button { display: flex; align-items: center; gap: 10px; border: 0; background: none; color: var(--text-secondary); padding: 8px 10px; border-radius: var(--radius-small); text-align: left; font-size: 13.5px; font-weight: 500; }
+.nav button:hover { background: var(--surface-hover); color: var(--text); }
+.nav button[aria-current="page"] { background: var(--accent-soft); color: var(--text); }
+.nav button[aria-current="page"] svg { color: var(--accent); }
+.nav svg, .icon { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+.side-foot { margin-top: auto; padding: 0 10px; color: var(--text-muted); font-size: 12px; }
+main { padding: 24px 28px 48px; min-width: 0; max-width: 1480px; width: 100%; display: grid; gap: 20px; align-content: start; transition: opacity 120ms; }
 main.loading { opacity: 0.6; }
 .top { display: flex; flex-wrap: wrap; gap: 12px; justify-content: space-between; align-items: center; }
-h1 { font-size: 30px; font-weight: 650; letter-spacing: -0.02em; margin: 0; display: inline; }
-.sub { color: var(--muted); margin-left: 14px; font-size: 14px; }
-h2 { font-size: 15px; font-weight: 600; margin: 0; }
-.note { color: var(--muted); font-size: 12.5px; margin: 3px 0 14px; max-width: 78ch; }
-.btn { display: inline-flex; align-items: center; gap: 8px; background: var(--surface-2); border: 1px solid var(--line-strong); border-radius: 10px; padding: 0 16px; min-height: 40px; color: var(--text); }
-.btn:hover { background: var(--surface-3); }
-.btn.primary { background: #f4f4f5; color: #111; border-color: #f4f4f5; font-weight: 600; }
-.btn.primary:hover { background: #fff; }
+h1 { font-size: 22px; font-weight: 600; letter-spacing: -0.02em; margin: 0; display: inline; }
+.sub { color: var(--text-muted); margin-left: 12px; font-size: 13px; }
+h2 { font-size: 14px; font-weight: 600; letter-spacing: -0.01em; margin: 0; }
+.note { color: var(--text-muted); font-size: 12.5px; margin: 3px 0 14px; max-width: 78ch; }
+.btn { display: inline-flex; align-items: center; gap: 7px; background: var(--surface-raised); border: 1px solid var(--border); border-radius: var(--radius-small); padding: 0 14px; height: 34px; color: var(--text); font-weight: 500; font-size: 13px; transition: background 0.15s; }
+.btn:hover { background: var(--surface-hover); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-text); }
+.btn.primary:hover { background: var(--accent-strong); }
 .controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
-.pills, .segmented { display: inline-flex; gap: 4px; padding: 4px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; }
-.pills button, .segmented button { border: 0; background: none; color: var(--text-2); padding: 0 14px; min-height: 34px; border-radius: 9px; display: inline-flex; align-items: center; gap: 8px; }
-.pills button:hover, .segmented button:hover { background: var(--surface-2); color: var(--text); }
-.pills button[aria-pressed="true"], .segmented button[aria-pressed="true"] { background: var(--surface-3); color: var(--text); font-weight: 600; }
-.dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; background: var(--previous); }
-.field { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; min-height: 42px; padding: 0 12px; color: var(--text-2); max-width: 220px; }
+.pills { justify-self: start; }
+.pills, .segmented { display: inline-flex; gap: 2px; padding: 3px; background: var(--surface-inset); border: 1px solid var(--border); border-radius: 10px; }
+.pills button, .segmented button { border: 0; background: none; color: var(--text-secondary); padding: 0 12px; height: 28px; border-radius: 7px; display: inline-flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 500; }
+.pills button:hover, .segmented button:hover { color: var(--text); }
+.pills button[aria-pressed="true"], .segmented button[aria-pressed="true"] { background: var(--surface-raised); color: var(--text); box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25); }
+.dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; background: var(--previous); }
+.field { background: var(--surface-inset); border: 1px solid var(--border); border-radius: var(--radius-small); height: 36px; padding: 0 10px; color: var(--text-secondary); font-size: 13px; max-width: 220px; }
 input[type="search"].field { max-width: 260px; }
 .ghost { background: none; border: 0; color: var(--accent); padding: 0 6px; min-height: 34px; }
-.banner { border: 1px solid var(--line-strong); background: var(--surface); padding: 10px 14px; border-radius: 12px; color: var(--text-2); font-size: 13px; }
-.banner.error { border-color: #5a2a2a; color: var(--poor); }
-.card { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 22px 24px; min-width: 0; }
+.banner { border: 1px solid var(--border); background: var(--surface); padding: 10px 14px; border-radius: var(--radius); color: var(--text-secondary); font-size: 13px; }
+.banner.error { border-color: color-mix(in srgb, var(--critical) 40%, var(--border)); background: var(--critical-soft); color: var(--critical); }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); padding: 18px 20px; min-width: 0; }
 .hero-name { display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 15px; }
 .hero-name span { color: var(--muted); font-weight: 400; font-size: 13px; }
 .hero-main { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 18px 32px; align-items: flex-end; margin: 10px 0 8px; }
-.big { font-size: 58px; line-height: 1; font-weight: 650; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
+.hero-total { display: flex; flex-wrap: wrap; align-items: baseline; gap: 10px; }
+.big { font-size: 52px; line-height: 1; font-weight: 650; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
 .big small { font-size: 14px; font-weight: 400; color: var(--muted); letter-spacing: 0; margin-left: 8px; }
 .stats { display: flex; flex-wrap: wrap; gap: 14px 34px; }
 .stat { display: grid; gap: 3px; min-width: 70px; }
 .stat span { color: var(--muted); font-size: 12.5px; }
 .stat strong { font-size: 15px; font-weight: 600; font-variant-numeric: tabular-nums; }
-.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; }
-.tile { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 16px 18px; display: grid; gap: 4px; align-content: start; min-width: 0; }
-.tile .label { color: var(--muted); font-size: 12.5px; display: flex; justify-content: space-between; gap: 8px; }
-.tile .value { font-size: 28px; font-weight: 650; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
-.tile .row { display: flex; justify-content: space-between; align-items: end; gap: 8px; min-height: 26px; }
-.tile .hint { color: var(--muted); font-size: 12px; }
-.delta { font-size: 12px; color: var(--text-2); }
-.delta.better { color: var(--good); }
-.delta.worse { color: var(--poor); }
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(172px, 1fr)); gap: 12px; }
+.tile { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); padding: 14px 16px; display: grid; gap: 6px; align-content: start; min-width: 0; overflow: hidden; }
+.tile .label { color: var(--muted); font-size: 12.5px; display: flex; justify-content: space-between; gap: 6px; min-width: 0; }
+.tile .label span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tile .value { font-size: 26px; font-weight: 650; letter-spacing: -0.025em; font-variant-numeric: tabular-nums; }
+.tile .row { display: flex; justify-content: space-between; align-items: center; gap: 6px; min-height: 24px; min-width: 0; }
+.tile .hint { color: var(--muted); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.delta { display: inline-flex; align-items: center; gap: 3px; font-size: 11px; font-weight: 500; color: var(--text-2); background: var(--neutral-soft); padding: 2px 7px; border-radius: 999px; white-space: nowrap; }
+.delta.better { color: var(--good); background: var(--good-soft); }
+.delta.worse { color: var(--poor); background: var(--critical-soft); }
 .status { white-space: nowrap; }
 .status.good { color: var(--good); }
 .status.watch { color: var(--watch); }
 .status.poor { color: var(--poor); }
-.spark { width: 72px; height: 24px; flex: none; }
-.columns { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(520px, 100%), 1fr)); gap: 20px; min-width: 0; }
+.spark { width: 48px; height: 20px; flex: none; }
+.spread { display: grid; gap: 8px; margin-top: 6px; }
+.spread-head { display: grid; grid-template-columns: 62px 1fr 1fr; gap: 12px; color: var(--muted); font-size: 11.5px; font-weight: 500; padding: 0 4px 6px; border-bottom: 1px solid var(--line); }
+.spread-head span:nth-child(2) { text-align: right; }
+.spread-row { display: grid; grid-template-columns: 62px 1fr 1fr; gap: 12px; align-items: center; font-size: 12.5px; font-variant-numeric: tabular-nums; padding: 4px; border-radius: 6px; transition: background 120ms; }
+.spread-row:hover { background: var(--surface-2); }
+.spread-label { color: var(--text-2); font-weight: 500; white-space: nowrap; }
+.spread-side { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.spread-side.left { justify-content: flex-end; }
+.spread-track { flex: 1; height: 10px; background: var(--track); border-radius: 999px; overflow: hidden; display: flex; }
+.spread-side.left .spread-track { justify-content: flex-end; }
+.spread-fill { height: 100%; border-radius: 999px; min-width: 2px; }
+.spread-fill.sessions { background: var(--previous); opacity: 0.75; }
+.spread-fill.spend { background: var(--claude); }
+.spread-pct { width: 34px; color: var(--muted); font-size: 11.5px; flex: none; }
+.spread-side.left .spread-pct { text-align: left; }
+.spread-side.right .spread-pct { text-align: right; }
+.spread-row.hot .spread-pct.spend-pct { color: var(--text); font-weight: 600; }
+.spread-summary { display: flex; flex-wrap: wrap; gap: 6px 16px; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--line); color: var(--text-2); font-size: 12.5px; font-variant-numeric: tabular-nums; }
+.spread-summary strong { color: var(--text); font-weight: 600; }
+.columns { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(440px, 100%), 1fr)); gap: 20px; min-width: 0; }
 .chart { position: relative; margin-top: 8px; }
 .chart svg { display: block; width: 100%; overflow: visible; }
 .chart text { fill: var(--muted); font-size: 11.5px; font-family: inherit; }
-.tooltip { position: absolute; pointer-events: none; background: var(--surface-3); border: 1px solid var(--line-strong); border-radius: 10px; padding: 8px 10px; font-size: 12px; white-space: nowrap; font-variant-numeric: tabular-nums; z-index: 2; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45); display: grid; gap: 3px; }
+.tooltip { position: absolute; pointer-events: none; background: var(--surface-raised); border: 1px solid var(--line-strong); border-radius: var(--radius-small); padding: 8px 10px; font-size: 12px; white-space: nowrap; font-variant-numeric: tabular-nums; z-index: 2; box-shadow: var(--shadow-pop); display: grid; gap: 3px; }
 .tooltip b { font-weight: 600; }
 .tooltip i { display: inline-block; width: 9px; height: 9px; border-radius: 3px; margin-right: 7px; }
 .legend { display: flex; flex-wrap: wrap; gap: 4px 20px; color: var(--text-2); font-size: 12.5px; margin-top: 10px; }
@@ -114,37 +137,39 @@ tr.clickable { cursor: pointer; }
 tr.clickable:hover td { background: var(--surface-2); }
 .link { background: none; border: 0; padding: 0; color: var(--text); text-align: left; overflow-wrap: anywhere; }
 .link:hover { color: var(--accent); }
-.mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; color: var(--text-2); overflow-wrap: anywhere; }
-.chip { display: inline-block; font-size: 11px; padding: 1px 7px; border-radius: 999px; background: var(--surface-3); color: var(--text-2); margin-left: 8px; vertical-align: middle; }
+.mono { font-family: var(--font-mono); font-size: 12px; color: var(--text-2); overflow-wrap: anywhere; }
+.chip { display: inline-block; font-size: 11px; font-weight: 500; padding: 1px 7px; border-radius: 999px; background: var(--neutral-soft); color: var(--text-2); margin-left: 8px; vertical-align: middle; }
+.chip.warn { background: var(--critical-soft); color: var(--critical); }
 .small { color: var(--muted); font-size: 12px; }
 .nowrap { white-space: nowrap; }
 .bar { height: 4px; margin-top: 6px; border-radius: 0 2px 2px 0; background: var(--accent); min-width: 2px; }
+.bar.spend { background: var(--claude); }
 .empty { color: var(--muted); padding: 14px 0; }
 .spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid var(--line-strong); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; flex: none; }
 @keyframes spin { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { .spinner { animation-duration: 2.4s; } .btn.busy .icon { animation: none; } }
 .loader, .loading-row { display: flex; align-items: center; gap: 12px; color: var(--text-2); font-size: 13px; }
-.loader { position: fixed; top: 18px; left: 50%; transform: translateX(-50%); background: var(--surface-3); border: 1px solid var(--line-strong); border-radius: 999px; padding: 8px 16px; z-index: 5; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45); }
+.loader { position: fixed; top: 18px; left: 50%; transform: translateX(-50%); background: var(--surface-raised); border: 1px solid var(--line-strong); border-radius: 999px; padding: 8px 16px; z-index: 5; box-shadow: var(--shadow-pop); }
 .loading-row { padding: 36px 0; justify-content: center; }
 .btn.busy .icon { animation: spin 0.9s linear infinite; }
 [hidden] { display: none !important; }
-dialog { background: var(--surface); color: var(--text); border: 1px solid var(--line-strong); border-radius: 16px 0 0 16px; padding: 0; margin: 0 0 0 auto; height: 100dvh; max-height: 100dvh; width: min(860px, 100vw); max-width: 100vw; }
+dialog { background: var(--surface); color: var(--text); border: 1px solid var(--line-strong); border-radius: var(--radius) 0 0 var(--radius); box-shadow: var(--shadow-pop); padding: 0; margin: 0 0 0 auto; height: 100dvh; max-height: 100dvh; width: min(860px, 100vw); max-width: 100vw; }
 dialog::backdrop { background: rgba(0, 0, 0, 0.6); }
 .drawer-head { position: sticky; top: 0; background: var(--surface); border-bottom: 1px solid var(--line); padding: 16px 20px; display: flex; justify-content: space-between; gap: 12px; align-items: start; z-index: 1; }
 .drawer-body { padding: 16px 20px; display: grid; gap: 16px; }
 .facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 8px; }
-.facts div { background: var(--surface-2); border-radius: 10px; padding: 10px 12px; color: var(--muted); font-size: 12px; }
+.facts div { background: var(--surface-inset); border: 1px solid var(--border); border-radius: var(--radius-small); padding: 10px 12px; color: var(--muted); font-size: 12px; }
 .facts strong { display: block; font-size: 16px; font-weight: 600; color: var(--text); }
 .step { display: grid; grid-template-columns: 62px 78px minmax(0, 1fr) 96px; gap: 8px; padding: 7px 0; border-bottom: 1px solid var(--line); font-size: 13px; }
 .step .time, .step .kind { color: var(--muted); font-size: 12px; }
-.step .text { color: var(--text-2); font-size: 12px; overflow-wrap: anywhere; white-space: pre-wrap; margin: 2px 0 0; font-family: ui-monospace, monospace; max-height: 7.5em; overflow-y: auto; }
+.step .text { color: var(--text-2); font-size: 12px; overflow-wrap: anywhere; white-space: pre-wrap; margin: 2px 0 0; font-family: var(--font-mono); max-height: 7.5em; overflow-y: auto; }
 .step.prompt .text { color: var(--text); font-family: inherit; font-size: 13px; }
 .step .amount { text-align: right; color: var(--text-2); font-size: 12px; font-variant-numeric: tabular-nums; }
 .step.failed .kind { color: var(--poor); }
 @media (max-width: 900px) {
-  .app { grid-template-columns: 1fr; }
-  .side { position: static; height: auto; flex-direction: row; flex-wrap: wrap; align-items: center; padding: 14px 16px 0; gap: 12px; }
-  .nav { display: flex; flex-wrap: wrap; }
+  .app { grid-template-columns: 1fr; background: none; }
+  .side { position: static; height: auto; flex-direction: row; flex-wrap: wrap; align-items: center; padding: 12px 16px; gap: 12px; background: var(--sidebar); border-bottom: 1px solid var(--border); }
+  .nav { flex-direction: row; flex-wrap: wrap; }
   .side-foot { display: none; }
   main { padding: 18px 16px 48px; }
   .big { font-size: 44px; }
@@ -155,7 +180,7 @@ dialog::backdrop { background: rgba(0, 0, 0, 0.6); }
 <body>
 <div class="app">
   <aside class="side">
-    <div class="brand"><i><svg class="icon" viewBox="0 0 24 24" id="brand-icon"></svg></i>fleet</div>
+    <div class="brand"><i><svg class="icon" viewBox="0 0 24 24" id="brand-icon"></svg></i><div class="brand-name"><strong>Fleet agents</strong><span>ai-setup telemetry</span></div></div>
     <nav class="nav" id="nav" aria-label="Pages"></nav>
     <div class="side-foot" id="freshness"></div>
   </aside>
@@ -179,6 +204,19 @@ dialog::backdrop { background: rgba(0, 0, 0, 0.6); }
       <div class="tiles" id="tiles"></div>
     </section>
     <section data-page="overview" id="heroes" hidden style="display:grid;gap:20px"></section>
+    <div class="columns" data-page="overview" hidden>
+      <section class="card">
+        <h2>Spend by source per day</h2>
+        <p class="note">Claude API-equivalent spend split across main thread, subagents and compaction.</p>
+        <div class="chart" id="cost-sources-chart"></div>
+        <div class="legend" id="cost-sources-legend"></div>
+      </section>
+      <section class="card">
+        <h2>Session spend spread</h2>
+        <p class="note" id="cost-spread-note">How sessions vs total dollars distribute across spend brackets.</p>
+        <div id="cost-spread"></div>
+      </section>
+    </div>
     <section data-page="overview" class="card" hidden>
       <h2>Where the time went</h2>
       <p class="note">Measured time inside model calls, tools and permission prompts. Claude reports all three; Codex reports tools only.</p>
@@ -200,8 +238,8 @@ dialog::backdrop { background: rgba(0, 0, 0, 0.6); }
 
     <div class="columns" data-page="overview" hidden>
       <section class="card">
-        <h2>Top tasks</h2>
-        <p class="note">The biggest sessions by tokens. Click one for its timeline.</p>
+        <h2>Top sessions by spend</h2>
+        <p class="note">Most expensive sessions in this window. Click one for its timeline.</p>
         <div class="scroll" id="top-tasks"></div>
       </section>
       <section class="card">
@@ -326,6 +364,19 @@ const DECISION_SERIES = [
   ["hook_blocked", "Blocked by a guard", "#e66767"],
   ["rejected", "Rejected", "#9085e9"],
 ];
+const COST_SOURCES = [
+  ["main", "Main thread", "var(--series-1)"],
+  ["subagents", "Subagents", "var(--series-3)"],
+  ["compaction", "Compaction", "var(--series-5)"],
+];
+const SPEND_BUCKETS = [
+  { label: "< $1", max: 1 },
+  { label: "$1–5", max: 5 },
+  { label: "$5–20", max: 20 },
+  { label: "$20–50", max: 50 },
+  { label: "$50–100", max: 100 },
+  { label: "$100+", max: Infinity },
+];
 
 const initial = new URLSearchParams(location.search);
 const state = {
@@ -347,6 +398,7 @@ const compact = new Intl.NumberFormat("en", { notation: "compact", maximumFracti
 function formatCount(value) { return value == null ? "–" : compact.format(value); }
 function formatUsd(value) {
   if (value == null) return "–";
+  if (value === 0) return "$0";
   if (value < 1) return `$${value.toFixed(3)}`;
   return value < 100 ? `$${value.toFixed(2)}` : `$${compact.format(value)}`;
 }
@@ -390,9 +442,14 @@ function scopeParams(extra = {}) {
   return params;
 }
 
+const freshness = { bypassCache: false, oldestSeconds: 0 };
+
 async function panel(name, extra) {
-  const response = await fetch(`/api/${name}?${scopeParams(extra)}`);
+  const params = scopeParams(extra);
+  if (freshness.bypassCache) params.set("fresh", "1");
+  const response = await fetch(`/api/${name}?${params}`);
   if (!response.ok) throw new Error(`${name}: ${await response.text()}`);
+  freshness.oldestSeconds = Math.max(freshness.oldestSeconds, Number(response.headers.get("X-Data-Age")) || 0);
   return response.json();
 }
 
@@ -412,16 +469,20 @@ function bandStatus(value, sample, good, poor) {
   return { tone, text: STATUS_LABELS[tone] };
 }
 
+function periodLabel() {
+  return state.days === 7 ? "7d" : `${state.days}d`;
+}
+
 function deltaNode(current, previous, better, usePoints) {
   if (current == null || previous == null) return element("span", { className: "delta", textContent: "no earlier data" });
   const difference = current - previous;
-  if (difference === 0) return element("span", { className: "delta", textContent: "■ no change" });
+  if (difference === 0) return element("span", { className: "delta", textContent: "no change" });
   const arrow = difference > 0 ? "▲" : "▼";
   const size = usePoints ? `${Math.abs(difference * 100).toFixed(1)} pts`
     : previous === 0 ? "from 0" : `${Math.abs((difference / previous) * 100).toFixed(0)}%`;
   const improved = better === "up" ? difference > 0 : difference < 0;
   const tone = better ? (improved ? "better" : "worse") : "";
-  return element("span", { className: `delta ${tone}`, textContent: `${arrow} ${size} vs before` });
+  return element("span", { className: `delta ${tone}`, textContent: `${arrow} ${size} vs ${periodLabel()}` });
 }
 
 function sparkline(values) {
@@ -534,6 +595,18 @@ function drawChart(host, spec) {
     });
   }
 
+  if (spec.markers) {
+    spec.markers.forEach((marker, index) => {
+      if (!marker || !marker.apiErrors) return;
+      const color = marker.rateLimits > 0 ? "var(--warning)" : "var(--critical)";
+      const px = x(index);
+      svg.append(
+        svgNode("line", { x1: px, x2: px, y1: margin.top + 4, y2: margin.top + innerHeight, stroke: color, "stroke-width": 1.5, "stroke-opacity": 0.35, "stroke-dasharray": "3 3" }),
+        svgNode("circle", { cx: px, cy: margin.top + 4, r: 4, fill: color, stroke: "var(--surface)", "stroke-width": 1.5 }),
+      );
+    });
+  }
+
   const cursor = svgNode("line", { y1: margin.top, y2: margin.top + innerHeight, stroke: "var(--line-strong)", "stroke-width": 1, visibility: "hidden" });
   const dots = spec.series.map((line) => svgNode("circle", { r: 4, fill: line.color, stroke: "var(--surface)", "stroke-width": 2, visibility: "hidden" }));
   const tooltip = element("div", { className: "tooltip", hidden: true });
@@ -555,9 +628,18 @@ function drawChart(host, spec) {
       dots[position].setAttribute("cy", y(value));
       dots[position].setAttribute("visibility", "visible");
     });
+    const marker = spec.markers?.[index];
+    const markerLine = marker?.apiErrors
+      ? [element("span", {},
+          element("i", { style: `background:${marker.rateLimits > 0 ? "var(--warning)" : "var(--critical)"}` }),
+          marker.rateLimits > 0
+            ? `${formatCount(marker.rateLimits)} rate limit${marker.rateLimits === 1 ? "" : "s"}${marker.apiErrors > marker.rateLimits ? ` · ${formatCount(marker.apiErrors - marker.rateLimits)} other API` : ""}`
+            : `${formatCount(marker.apiErrors)} API error${marker.apiErrors === 1 ? "" : "s"}`)]
+      : [];
     tooltip.replaceChildren(
       element("b", { textContent: spec.labels[index] }),
       ...spec.series.map((line) => element("span", {}, element("i", { style: `background:${line.color}` }), `${line.name}: ${line.values[index] == null ? "–" : spec.format(line.values[index])}`)),
+      ...markerLine,
     );
     tooltip.hidden = false;
     const left = (x(index) / width) * box.width;
@@ -636,43 +718,126 @@ function agentSlices(daily) {
 
 function renderHeroes(daily) {
   const metric = METRICS[state.metric];
-  const heroes = agentSlices(daily).map((slice) => {
-    const total = slice.now(metric.field);
-    const hasValue = slice.current.some((row) => row[metric.field] != null);
-    const weightedCache = sum(slice.current.map((row) => ({ value: (row.cache_hit ?? 0) * row.tokens })), "value");
-    const failureRate = ratio(slice.now("tool_failures"), slice.now("tool_calls"));
-    const color = AGENT_COLORS[slice.agent] ?? "var(--previous)";
-    const chart = element("div", { className: "chart" });
-    const card = element("section", { className: "card" },
-      element("div", { className: "hero-name" }, element("i", { className: "dot", style: `background:${color}` }), slice.agent[0].toUpperCase() + slice.agent.slice(1), element("span", { textContent: `${formatCount(slice.now("tasks"))} task-days` })),
-      element("div", { className: "hero-main" },
-        element("div", { className: "big" }, hasValue ? metric.format(total) : "–", element("small", { textContent: `${metric.label.toLowerCase()}, last ${state.days} days` })),
-        element("div", { className: "stats" },
-          stat("Previous period", slice.previous.length ? metric.format(slice.then(metric.field)) : "–"),
-          stat("Cache hit", formatPercent(ratio(weightedCache, slice.now("tokens")))),
-          stat("Tool failures", formatPercent(failureRate)),
-          stat("Tool calls", formatCount(slice.now("tool_calls"))))),
-      chart,
-      element("div", { className: "legend" },
-        element("span", {}, element("i", { style: `border-color:${color}` }), "This period"),
-        element("span", {}, element("i", { className: "dashed", style: "border-color:var(--previous)" }), "Previous period")));
-    slice.chart = chart;
-    slice.color = color;
-    return { card, slice };
+  const slices = agentSlices(daily);
+  if (!slices.length) {
+    document.getElementById("heroes").replaceChildren(element("div", { className: "empty", textContent: "No requests in this window." }));
+    return;
+  }
+  const combine = !state.agent && slices.length > 1;
+  const targets = combine ? [combinedHero(slices, metric)] : slices.map((slice) => singleHero(slice, metric));
+  document.getElementById("heroes").replaceChildren(...targets.map(({ card }) => card));
+  targets.forEach(({ chart, spec }) => drawChart(chart, spec));
+}
+
+function combinedHero(slices, metric) {
+  const days = slices[0].days;
+  const before = slices[0].before;
+  const allCurrent = slices.flatMap((slice) => slice.current);
+  const allPrevious = slices.flatMap((slice) => slice.previous);
+  const total = sum(allCurrent, metric.field);
+  const prevTotal = allPrevious.length ? sum(allPrevious, metric.field) : null;
+  const hasValue = allCurrent.some((row) => row[metric.field] != null);
+  const weightedCache = sum(allCurrent.map((row) => ({ value: (row.cache_hit ?? 0) * row.tokens })), "value");
+  const failureRate = ratio(sum(allCurrent, "tool_failures"), sum(allCurrent, "tool_calls"));
+  const markers = days.map((day) => {
+    const rows = allCurrent.filter((row) => row.day === day);
+    return { apiErrors: sum(rows, "api_errors"), rateLimits: sum(rows, "rate_limits") };
   });
-  document.getElementById("heroes").replaceChildren(...heroes.map(({ card }) => card));
-  if (!heroes.length) document.getElementById("heroes").replaceChildren(element("div", { className: "empty", textContent: "No requests in this window." }));
-  heroes.forEach(({ slice }) => {
-    drawChart(slice.chart, {
+  const hasErrors = markers.some((marker) => marker.apiErrors > 0);
+  const hasRateLimits = markers.some((marker) => marker.rateLimits > 0);
+  const activeSlices = slices.filter((slice) => slice.current.some((row) => row[metric.field] != null));
+  const previousByDay = before.map((day) => {
+    const rows = allPrevious.filter((row) => row.day === day && row[metric.field] != null);
+    return rows.length ? sum(rows, metric.field) : null;
+  });
+  const chart = element("div", { className: "chart" });
+  const legendItems = [
+    ...activeSlices.map((slice) => element("span", {}, element("i", { style: `border-color:${AGENT_COLORS[slice.agent] ?? "var(--previous)"}` }), slice.agent[0].toUpperCase() + slice.agent.slice(1))),
+    element("span", {}, element("i", { className: "dashed", style: "border-color:var(--previous)" }), "Previous period"),
+  ];
+  if (hasErrors) {
+    legendItems.push(element("span", {}, element("i", { className: "block", style: `background:${hasRateLimits ? "var(--warning)" : "var(--critical)"}` }), hasRateLimits ? "Rate limit / API error day" : "API error day"));
+  }
+  const card = element("section", { className: "card" },
+    element("div", { className: "hero-name" }, "All agents", element("span", { textContent: `${formatCount(sum(allCurrent, "tasks"))} task-days` })),
+    element("div", { className: "hero-main" },
+      element("div", { className: "hero-total" },
+        element("div", { className: "big" }, hasValue ? metric.format(total) : "–", element("small", { textContent: `${metric.label.toLowerCase()}, last ${state.days} days` })),
+        hasValue ? deltaNode(total, prevTotal, state.metric === "api_usd" ? "down" : "") : document.createTextNode("")),
+      element("div", { className: "stats" },
+        ...activeSlices.map((slice) => stat(slice.agent[0].toUpperCase() + slice.agent.slice(1), metric.format(slice.now(metric.field)))),
+        stat("Cache hit", formatPercent(ratio(weightedCache, sum(allCurrent, "tokens")))),
+        stat("Tool failures", formatPercent(failureRate)))),
+    chart,
+    element("div", { className: "legend" }, ...legendItems));
+  return {
+    card,
+    chart,
+    spec: {
+      label: `All agents ${metric.label}`,
+      labels: days,
+      format: metric.format,
+      markers,
+      series: [
+        { name: "Previous period", color: "var(--previous)", dashed: true, values: previousByDay },
+        ...activeSlices.map((slice) => ({
+          name: slice.agent[0].toUpperCase() + slice.agent.slice(1),
+          color: AGENT_COLORS[slice.agent] ?? "var(--previous)",
+          area: true,
+          values: slice.lookup(days, metric.field),
+        })),
+      ],
+    },
+  };
+}
+
+function singleHero(slice, metric) {
+  const total = slice.now(metric.field);
+  const prevTotal = slice.previous.length ? slice.then(metric.field) : null;
+  const hasValue = slice.current.some((row) => row[metric.field] != null);
+  const weightedCache = sum(slice.current.map((row) => ({ value: (row.cache_hit ?? 0) * row.tokens })), "value");
+  const failureRate = ratio(slice.now("tool_failures"), slice.now("tool_calls"));
+  const color = AGENT_COLORS[slice.agent] ?? "var(--previous)";
+  const markers = slice.days.map((day) => {
+    const rows = slice.current.filter((row) => row.day === day);
+    return { apiErrors: sum(rows, "api_errors"), rateLimits: sum(rows, "rate_limits") };
+  });
+  const hasErrors = markers.some((marker) => marker.apiErrors > 0);
+  const hasRateLimits = markers.some((marker) => marker.rateLimits > 0);
+  const chart = element("div", { className: "chart" });
+  const legendItems = [
+    element("span", {}, element("i", { style: `border-color:${color}` }), "This period"),
+    element("span", {}, element("i", { className: "dashed", style: "border-color:var(--previous)" }), "Previous period"),
+  ];
+  if (hasErrors) {
+    legendItems.push(element("span", {}, element("i", { className: "block", style: `background:${hasRateLimits ? "var(--warning)" : "var(--critical)"}` }), hasRateLimits ? "Rate limit / API error day" : "API error day"));
+  }
+  const card = element("section", { className: "card" },
+    element("div", { className: "hero-name" }, element("i", { className: "dot", style: `background:${color}` }), slice.agent[0].toUpperCase() + slice.agent.slice(1), element("span", { textContent: `${formatCount(slice.now("tasks"))} task-days` })),
+    element("div", { className: "hero-main" },
+      element("div", { className: "hero-total" },
+        element("div", { className: "big" }, hasValue ? metric.format(total) : "–", element("small", { textContent: `${metric.label.toLowerCase()}, last ${state.days} days` })),
+        hasValue ? deltaNode(total, prevTotal, state.metric === "api_usd" ? "down" : "") : document.createTextNode("")),
+      element("div", { className: "stats" },
+        stat("Cache hit", formatPercent(ratio(weightedCache, slice.now("tokens")))),
+        stat("Tool failures", formatPercent(failureRate)),
+        stat("API errors", formatCount(slice.now("api_errors"))))),
+    chart,
+    element("div", { className: "legend" }, ...legendItems));
+  return {
+    card,
+    chart,
+    spec: {
       label: `${slice.agent} ${metric.label}`,
       labels: slice.days,
       format: metric.format,
+      markers,
       series: [
-        { name: "Previous period", color: "#696e77", dashed: true, values: slice.lookup(slice.before, metric.field) },
-        { name: "This period", color: slice.color, area: true, values: slice.lookup(slice.days, metric.field) },
+        { name: "Previous period", color: "var(--previous)", dashed: true, values: slice.lookup(slice.before, metric.field) },
+        { name: "This period", color, area: true, values: slice.lookup(slice.days, metric.field) },
       ],
-    });
-  });
+    },
+  };
 }
 
 function stat(label, value) {
@@ -690,19 +855,109 @@ function renderTiles(rows, daily) {
   const days = dayList(state.days, 0);
   const total = (field) => days.map((day) => { const rowsOfDay = daily.filter((row) => row.day === day); return rowsOfDay.length ? sum(rowsOfDay, field) : null; });
   const failureSpark = days.map((day) => { const rowsOfDay = daily.filter((row) => row.day === day); return ratio(sum(rowsOfDay, "tool_failures"), sum(rowsOfDay, "tool_calls")); });
-  const cacheSpark = days.map((day) => { const rowsOfDay = daily.filter((row) => row.day === day); const tokens = sum(rowsOfDay, "tokens"); return tokens ? rowsOfDay.reduce((acc, row) => acc + (row.cache_hit ?? 0) * row.tokens, 0) / tokens : null; });
+  const errorSpark = days.map((day) => { const rowsOfDay = daily.filter((row) => row.day === day); return rowsOfDay.length ? sum(rowsOfDay, "api_errors") : null; });
+  const ttft = now.ttft_p95_ms == null ? "–" : formatSeconds(now.ttft_p95_ms / 1000);
+  const rateLimits = now.rate_limits ?? 0;
+  const errorHint = rateLimits > 0
+    ? `${formatCount(rateLimits)} rate limits · ${formatPercent(known(now, errors(now)))} of reqs`
+    : `${formatPercent(known(now, errors(now)))} of requests`;
+  const errorStatus = rateLimits > 0
+    ? { tone: "watch", text: "! Rate limits" }
+    : bandStatus(known(now, errors(now)), now.requests ?? 0, 0.01, 0.03);
   document.getElementById("tiles").replaceChildren(
-    tile({ label: "API-equivalent spend", value: formatUsd(now.api_usd), current: now.api_usd, previous: before.api_usd, better: "down", hint: "Claude only, at API list prices", spark: sparkline(total("api_usd")) }),
-    tile({ label: "Tokens", value: formatCount(known(now, now.tokens)), current: known(now, now.tokens), previous: known(before, before.tokens), hint: "All agents, including cached", spark: sparkline(total("tokens")) }),
-    tile({ label: "Tasks", value: formatCount(known(now, now.tasks)), current: known(now, now.tasks), previous: known(before, before.tasks), hint: "Sessions with model requests", spark: sparkline(total("tasks")) }),
-    tile({ label: "Spend per task", value: formatUsd(perTask(now)), current: perTask(now), previous: perTask(before), better: "down", hint: "Claude only" }),
-    tile({ label: "Cache hit", value: formatPercent(known(now, now.cache_hit)), current: known(now, now.cache_hit), previous: known(before, before.cache_hit), better: "up", points: true, status: bandStatus(known(now, now.cache_hit), now.requests ?? 0, 0.9, 0.7), hint: "Target 90% or higher", spark: sparkline(cacheSpark) }),
-    tile({ label: "Tool failure rate", value: formatPercent(failure(now)), current: failure(now), previous: failure(before), better: "down", points: true, status: bandStatus(failure(now), now.tool_calls ?? 0, 0.05, 0.1), hint: "Target below 5%", spark: sparkline(failureSpark) }),
-    tile({ label: "API error rate", value: formatPercent(known(now, errors(now))), current: known(now, errors(now)), previous: known(before, errors(before)), better: "down", points: true, status: bandStatus(known(now, errors(now)), now.requests ?? 0, 0.01, 0.03), hint: "Target below 1%" }),
-    tile({ label: "Done in one prompt", value: formatPercent(oneShot(now)), current: oneShot(now), previous: oneShot(before), better: "up", points: true, hint: "Tasks needing one prompt" }),
-    tile({ label: "First token, p95", value: formatSeconds(now.ttft_p95_ms == null ? null : now.ttft_p95_ms / 1000), current: now.ttft_p95_ms, previous: before.ttft_p95_ms || null, better: "down", hint: "Time to first token" }),
-    tile({ label: "Commits", value: formatCount(now.commits ?? 0), current: now.commits, previous: known(before, before.commits), better: "up", hint: `${formatCount(now.pull_requests ?? 0)} PRs, ${formatCount(now.lines_changed ?? 0)} lines changed` }),
+    tile({ label: "API-equivalent spend", value: formatUsd(now.api_usd), current: now.api_usd, previous: before.api_usd, better: "down", hint: `${formatUsd(perTask(now))} / task · Claude est.`, spark: sparkline(total("api_usd")) }),
+    tile({ label: "Tasks", value: formatCount(known(now, now.tasks)), current: known(now, now.tasks), previous: known(before, before.tasks), hint: `${formatPercent(oneShot(now))} one-prompt · ${formatCount(now.commits ?? 0)} commits`, spark: sparkline(total("tasks")) }),
+    tile({ label: "Tokens", value: formatCount(known(now, now.tokens)), current: known(now, now.tokens), previous: known(before, before.tokens), hint: `${formatPercent(known(now, now.cache_hit))} cache hit · ${ttft} TTFT`, spark: sparkline(total("tokens")) }),
+    tile({ label: "Tool failure rate", value: formatPercent(failure(now)), current: failure(now), previous: failure(before), better: "down", points: true, status: bandStatus(failure(now), now.tool_calls ?? 0, 0.05, 0.1), hint: `${formatCount(now.tool_failures ?? 0)} of ${formatCount(now.tool_calls ?? 0)} calls`, spark: sparkline(failureSpark) }),
+    tile({ label: "API errors", value: formatCount(now.api_errors ?? 0), current: now.api_errors ?? 0, previous: before.api_errors ?? 0, better: "down", status: errorStatus, hint: errorHint, spark: sparkline(errorSpark) }),
   );
+}
+
+function renderCostSources(rows) {
+  const chart = document.getElementById("cost-sources-chart");
+  const legendHost = document.getElementById("cost-sources-legend");
+  if (!rows.length) {
+    chart.replaceChildren(element("div", { className: "empty", textContent: "No Claude spend in this window." }));
+    legendHost.replaceChildren();
+    return;
+  }
+  const days = dayList(state.days, 0);
+  const bySource = (group) => days.map((day) => rows.find((row) => row.day === day && row.source_group === group)?.api_usd ?? 0);
+  const grandTotal = sum(rows, "api_usd");
+  drawChart(chart, {
+    kind: "bars",
+    label: "Spend by source per day",
+    labels: days,
+    format: formatUsd,
+    series: COST_SOURCES.map(([group, name, color]) => ({ name, color, values: bySource(group) })),
+  });
+  legend(legendHost, COST_SOURCES.map(([group, name, color]) => {
+    const groupTotal = sum(rows.filter((row) => row.source_group === group), "api_usd");
+    const share = grandTotal ? `${Math.round((groupTotal / grandTotal) * 100)}%` : "0%";
+    return { name: `${name} ${formatUsd(groupTotal)} (${share})`, color, block: true };
+  }));
+}
+
+function renderCostSpread(rows) {
+  const host = document.getElementById("cost-spread");
+  const note = document.getElementById("cost-spread-note");
+  const values = rows.map((row) => Number(row.api_usd)).filter((value) => value > 0).sort((a, b) => a - b);
+  if (!values.length) {
+    note.textContent = "How sessions vs total dollars distribute across spend brackets.";
+    host.replaceChildren(element("div", { className: "empty", textContent: "No Claude spend in this window." }));
+    return;
+  }
+  const totalSessions = values.length;
+  const totalSpend = values.reduce((acc, value) => acc + value, 0);
+  const at = (fraction) => values[Math.min(values.length - 1, Math.floor(fraction * (values.length - 1)))];
+  const median = at(0.5);
+  const p90 = at(0.9);
+  const top10Spend = values.filter((value) => value >= p90).reduce((acc, value) => acc + value, 0);
+  const top10Share = totalSpend ? Math.round((top10Spend / totalSpend) * 100) : 0;
+  note.textContent = `Top 10% of sessions drove ${top10Share}% of total spend.`;
+
+  const buckets = SPEND_BUCKETS.map((bucket) => ({ label: bucket.label, max: bucket.max, sessions: 0, spend: 0 }));
+  values.forEach((value) => {
+    const bucket = buckets.find((candidate) => value < candidate.max);
+    bucket.sessions += 1;
+    bucket.spend += value;
+  });
+  const maxSessionShare = Math.max(0.01, ...buckets.map((bucket) => bucket.sessions / totalSessions));
+  const maxSpendShare = Math.max(0.01, ...buckets.map((bucket) => bucket.spend / totalSpend));
+
+  const grid = element("div", { className: "spread" },
+    element("div", { className: "spread-head" },
+      element("span", { textContent: "Bracket" }),
+      element("span", { textContent: "← Share of sessions" }),
+      element("span", { textContent: "Share of spend →" })),
+    ...buckets.map((bucket) => {
+      const sessionShare = bucket.sessions / totalSessions;
+      const spendShare = bucket.spend / totalSpend;
+      const sessionPct = Math.round(sessionShare * 100);
+      const spendPct = Math.round(spendShare * 100);
+      return element("div", {
+        className: `spread-row${spendShare >= 0.2 ? " hot" : ""}`,
+        title: `${bucket.label}: ${formatCount(bucket.sessions)} sessions (${sessionPct}%) · ${formatUsd(bucket.spend)} (${spendPct}%)`,
+      },
+        element("span", { className: "spread-label", textContent: bucket.label }),
+        element("div", { className: "spread-side left" },
+          element("span", { className: "spread-pct", textContent: `${sessionPct}%` }),
+          element("div", { className: "spread-track" },
+            bucket.sessions ? element("div", { className: "spread-fill sessions", style: `width:${(sessionShare / maxSessionShare) * 100}%` }) : document.createTextNode(""))),
+        element("div", { className: "spread-side right" },
+          element("div", { className: "spread-track" },
+            bucket.spend ? element("div", { className: "spread-fill spend", style: `width:${(spendShare / maxSpendShare) * 100}%` }) : document.createTextNode("")),
+          element("span", { className: "spread-pct spend-pct", textContent: `${spendPct}%` })));
+    }),
+  );
+
+  const summary = element("div", { className: "spread-summary" },
+    element("span", {}, "Median ", element("strong", { textContent: formatUsd(median) })),
+    element("span", {}, "p90 ", element("strong", { textContent: formatUsd(p90) })),
+    element("span", {}, "Max ", element("strong", { textContent: formatUsd(values.at(-1)) })),
+    element("span", {}, "Sessions ", element("strong", { textContent: formatCount(totalSessions) })));
+
+  host.replaceChildren(grid, summary);
 }
 
 function renderTimeBar(row) {
@@ -758,12 +1013,29 @@ const BLOCKER_COLUMNS = [
 ];
 
 function renderTopTasks(rows) {
+  const ranked = [...rows]
+    .sort((left, right) => (right.api_usd ?? -1) - (left.api_usd ?? -1) || right.tokens - left.tokens)
+    .slice(0, 8);
+  const useSpend = ranked.some((row) => row.api_usd != null && row.api_usd > 0);
+  const peak = Math.max(1, ...ranked.map((row) => (useSpend ? row.api_usd ?? 0 : row.tokens)));
   renderTable(document.getElementById("top-tasks"), "top-tasks", [
-    { title: "Task", wide: true, render: (row) => element("div", {}, element("span", { textContent: row.task || "(no title)" }), row.t3_title ? element("span", { className: "chip", textContent: "T3" }) : document.createTextNode(""), noteText(`${row.project || "unattributed"} · ${row.agent}`)), sort: (row) => row.task },
-    { title: "Tokens", number: true, render: (row) => formatCount(row.tokens), sort: (row) => row.tokens },
-    { title: "Spend", number: true, render: (row) => formatUsd(row.api_usd), sort: (row) => row.api_usd ?? 0 },
-    { title: "Failed", number: true, render: (row) => formatCount(row.tool_failures), sort: (row) => row.tool_failures },
-  ], rows.slice(0, 8), { onRow: (row) => openSession(row.session_id), empty: "No tasks in this window." });
+    {
+      title: "Session",
+      wide: true,
+      render: (row) => {
+        const value = useSpend ? row.api_usd ?? 0 : row.tokens;
+        return element("div", {},
+          element("span", {},
+            row.task || "(no title)",
+            row.t3_title ? element("span", { className: "chip", textContent: "T3" }) : document.createTextNode(""),
+            row.tool_failures ? element("span", { className: "chip warn", textContent: `${formatCount(row.tool_failures)} failed` }) : document.createTextNode("")),
+          noteText(`${row.project || "unattributed"} · ${row.agent} · ${formatMinutes(row.minutes)}`),
+          element("div", { className: `bar${useSpend ? " spend" : ""}`, style: `width:${Math.max(2, (value / peak) * 100)}%` }));
+      },
+      sort: (row) => row.task,
+    },
+    { title: useSpend ? "Spend" : "Tokens", number: true, render: (row) => (useSpend ? formatUsd(row.api_usd) : formatCount(row.tokens)), sort: (row) => (useSpend ? row.api_usd ?? 0 : row.tokens) },
+  ], ranked, { onRow: (row) => openSession(row.session_id), empty: "No sessions in this window." });
 }
 
 function renderTopFailures(rows) {
@@ -805,6 +1077,7 @@ function renderFailureTiles(summary, failureDaily, decisions, hookBlocks) {
   const failureRate = ratio(now.tool_failures, now.tool_calls);
   document.getElementById("reliability-tiles").replaceChildren(
     tile({ label: "Tool failure rate", value: formatPercent(failureRate), current: failureRate, previous: ratio(before.tool_failures, before.tool_calls), better: "down", points: true, status: bandStatus(failureRate, now.tool_calls ?? 0, 0.05, 0.1), hint: `${formatCount(now.tool_failures ?? 0)} of ${formatCount(now.tool_calls ?? 0)} calls` }),
+    tile({ label: "API errors", value: formatCount(now.api_errors ?? 0), current: now.api_errors ?? 0, previous: before.api_errors ?? 0, better: "down", hint: `${formatCount(now.rate_limits ?? 0)} rate limits` }),
     tile({ label: "Failures with error text", value: formatPercent(ratio(detailed, failures)), hint: `${formatCount(detailed)} of ${formatCount(failures)} captured by the new hook` }),
     tile({ label: "Guard blocks", value: formatCount(blocked), hint: "Secret and papercuts guard refusals" }),
     tile({ label: "You approved", value: formatCount(approved), hint: `${formatCount(sum(decisions, "auto_allowed"))} more were allowed by config` }),
@@ -1042,9 +1315,22 @@ async function loadFilters() {
 
 const loaders = {
   async overview() {
-    const [summary, daily, projects, models, tasks, blockers, failures, tools] = await Promise.all([panel("summary"), panel("daily"), panel("projects"), panel("models"), panel("tasks"), panel("blockers"), panel("failures"), panel("tools")]);
+    const [summary, daily, costSources, costSpread, projects, models, tasks, blockers, failures, tools] = await Promise.all([
+      panel("summary"),
+      panel("daily"),
+      panel("cost_sources"),
+      panel("cost_spread"),
+      panel("projects"),
+      panel("models"),
+      panel("tasks"),
+      panel("blockers"),
+      panel("failures"),
+      panel("tools"),
+    ]);
     renderTiles(summary, daily);
     renderHeroes(daily);
+    renderCostSources(costSources);
+    renderCostSpread(costSpread);
     renderTimeBar(summary.find((row) => row.period === "current") ?? {});
     renderProjects(projects);
     renderModels(models);
@@ -1074,7 +1360,9 @@ const loaders = {
   },
 };
 
-async function load() {
+async function load(bypassCache = false) {
+  freshness.bypassCache = bypassCache;
+  freshness.oldestSeconds = 0;
   const main = document.getElementById("main");
   main.classList.add("loading");
   document.getElementById("loader").hidden = false;
@@ -1083,15 +1371,17 @@ async function load() {
   renderChrome();
   try {
     await loaders[state.page]();
-    document.getElementById("freshness").textContent = `Updated ${new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`;
+    const fetchedAt = new Date(Date.now() - freshness.oldestSeconds * 1000);
+    document.getElementById("freshness").textContent = `Data from ${fetchedAt.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`;
   } catch (error) { showError(error); }
+  freshness.bypassCache = false;
   main.classList.remove("loading");
   document.getElementById("loader").hidden = true;
   document.getElementById("refresh").classList.remove("busy");
 }
 
 function setup() {
-  drawIcon(document.getElementById("brand-icon"), ["M4 12h10", "M10 6l6 6-6 6", "M19 5v14"]);
+  drawIcon(document.getElementById("brand-icon"), ["M12 2l8.66 5v10L12 22l-8.66-5V7z", "M12 8v8", "M8 12h8"]);
   drawIcon(document.getElementById("refresh-icon"), ["M21 12a9 9 0 1 1-3-6.7", "M21 4v5h-5"]);
   document.getElementById("nav").replaceChildren(...PAGES.map((page) => {
     const icon = svgNode("svg", { viewBox: "0 0 24 24", class: "icon" });
@@ -1117,7 +1407,7 @@ function setup() {
   document.getElementById("filter-project").onchange = (event) => setFilter("project", event.target.value);
   document.getElementById("filter-host").onchange = (event) => setFilter("host", event.target.value);
   document.getElementById("clear").onclick = () => { state.project = ""; state.host = ""; load(); };
-  document.getElementById("refresh").onclick = () => load();
+  document.getElementById("refresh").onclick = () => load(true);
   document.getElementById("task-search").oninput = (event) => { state.taskSearch = event.target.value; renderTasks(); };
   window.addEventListener("hashchange", () => { const page = location.hash.slice(1); if (PAGES.some((candidate) => candidate.id === page) && page !== state.page) { state.page = page; load(); } });
 }

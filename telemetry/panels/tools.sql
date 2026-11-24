@@ -7,7 +7,7 @@ SELECT
 FROM ai.tools
 WHERE ts >= now() - toIntervalDay({days:UInt32})
     AND NOT (agent = 'codex' AND tool = 'exec')
-    AND session_id IN scoped
+    AND (unfiltered AND session_id != '' OR session_id IN scoped)
 GROUP BY tool
 ORDER BY minutes DESC
 LIMIT 10

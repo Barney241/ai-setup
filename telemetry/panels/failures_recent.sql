@@ -9,6 +9,6 @@ SELECT
     t3_title,
     session_id
 FROM ai.tool_failures
-WHERE ts >= now() - toIntervalDay({days:UInt32}) AND session_id IN scoped
+WHERE ts >= now() - toIntervalDay({days:UInt32}) AND (unfiltered AND session_id != '' OR session_id IN scoped)
 ORDER BY ts DESC
 LIMIT 30

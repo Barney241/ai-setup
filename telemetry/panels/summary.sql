@@ -15,6 +15,7 @@ SELECT
     w.tool_minutes AS tool_minutes,
     w.wait_minutes AS wait_minutes,
     e.api_errors AS api_errors,
+    e.rate_limits AS rate_limits,
     o.commits AS commits,
     o.pull_requests AS pull_requests,
     o.lines_changed AS lines_changed
@@ -31,7 +32,7 @@ LEFT JOIN
         quantileIf(0.95)(ttft_ms, ttft_ms > 0) AS ttft_p95_ms,
         sum(duration_ms) / 60000 AS model_minutes
     FROM ai.requests
-    WHERE ts >= now() - toIntervalDay({days:UInt32} * 2) AND session_id IN scoped
+    WHERE ts >= now() - toIntervalDay({days:UInt32} * 2) AND (unfiltered AND session_id != '' OR session_id IN scoped)
     GROUP BY period
 ) AS r ON p.period = r.period
 LEFT JOIN
@@ -48,7 +49,7 @@ LEFT JOIN
             session_id,
             count() AS session_prompts
         FROM ai.prompts
-        WHERE ts >= now() - toIntervalDay({days:UInt32} * 2) AND session_id IN scoped
+        WHERE ts >= now() - toIntervalDay({days:UInt32} * 2) AND (unfiltered AND session_id != '' OR session_id IN scoped)
         GROUP BY period, session_id
     )
     GROUP BY period
@@ -62,7 +63,7 @@ LEFT JOIN
     FROM ai.tools
     WHERE ts >= now() - toIntervalDay({days:UInt32} * 2)
         AND NOT (agent = 'codex' AND tool = 'exec')
-        AND session_id IN scoped
+        AND (unfiltered AND session_id != '' OR session_id IN scoped)
     GROUP BY period
 ) AS t ON p.period = t.period
 LEFT JOIN
@@ -72,16 +73,21 @@ LEFT JOIN
         sumIf(duration_ms, phase = 'tool') / 60000 AS tool_minutes,
         sumIf(duration_ms, phase = 'permission_wait' AND name NOT LIKE 'config:%') / 60000 AS wait_minutes
     FROM ai.timings
-    WHERE ts >= now() - toIntervalDay({days:UInt32} * 2) AND session_id IN scoped
+    WHERE ts >= now() - toIntervalDay({days:UInt32} * 2) AND (unfiltered AND session_id != '' OR session_id IN scoped)
     GROUP BY period
 ) AS w ON p.period = w.period
 LEFT JOIN
 (
     SELECT
         if(ts >= now() - toIntervalDay({days:UInt32}), 'current', 'previous') AS period,
-        count() AS api_errors
+        count() AS api_errors,
+        countIf(
+            positionCaseInsensitive(detail, 'rate limit') > 0
+            OR positionCaseInsensitive(detail, 'rate_limit') > 0
+            OR positionCaseInsensitive(detail, '429') > 0
+        ) AS rate_limits
     FROM ai.api_errors
-    WHERE ts >= now() - toIntervalDay({days:UInt32} * 2) AND session_id IN scoped
+    WHERE ts >= now() - toIntervalDay({days:UInt32} * 2) AND (unfiltered AND session_id != '' OR session_id IN scoped)
     GROUP BY period
 ) AS e ON p.period = e.period
 LEFT JOIN
@@ -94,6 +100,6 @@ LEFT JOIN
     FROM otel.otel_metrics_sum
     WHERE TimeUnix >= now() - toIntervalDay({days:UInt32} * 2)
         AND ServiceName = 'claude-code'
-        AND Attributes['session.id'] IN scoped
+        AND (unfiltered AND Attributes['session.id'] != '' OR Attributes['session.id'] IN scoped)
     GROUP BY period
 ) AS o ON p.period = o.period

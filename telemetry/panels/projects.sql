@@ -10,7 +10,7 @@ SELECT
 FROM ai.tasks
 WHERE started >= now() - toIntervalDay({days:UInt32} * 2)
     AND total_tokens > 0
-    AND session_id IN scoped
+    AND (unfiltered AND session_id != '' OR session_id IN scoped)
 GROUP BY project
 HAVING tokens > 0
 ORDER BY tokens DESC

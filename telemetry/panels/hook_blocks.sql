@@ -4,7 +4,7 @@ SELECT
     count() AS blocks,
     toString(toDateTime(max(ts))) AS last_seen
 FROM ai.hook_blocks
-WHERE ts >= now() - toIntervalDay({days:UInt32}) AND session_id IN scoped
+WHERE ts >= now() - toIntervalDay({days:UInt32}) AND (unfiltered AND session_id != '' OR session_id IN scoped)
 GROUP BY hook, reason
 ORDER BY blocks DESC
 LIMIT 15

@@ -1,12 +1,19 @@
 WITH
+({project:String} = '' AND {host:String} = '' AND {agent:String} = '') AS unfiltered,
 scoped AS
 (
-    SELECT s.session_id
-    FROM ai.sessions AS s
-    LEFT JOIN ai.session_context AS c ON s.session_id = c.session_id
-    WHERE ({project:String} = '' OR if(c.project = '', 'unattributed', c.project) = {project:String})
-        AND ({host:String} = '' OR s.host = {host:String})
-        AND ({agent:String} = '' OR s.agent = {agent:String})
+    SELECT session_id
+    FROM ai.events
+    WHERE ts >= now() - toIntervalDay({days:UInt32} * 2)
+        AND session_id != ''
+        AND ({host:String} = '' OR host = {host:String})
+        AND ({agent:String} = '' OR agent = {agent:String})
+        AND (
+            {project:String} = ''
+            OR ({project:String} = 'unattributed' AND session_id NOT IN (SELECT session_id FROM ai.session_context WHERE project != ''))
+            OR session_id IN (SELECT session_id FROM ai.session_context WHERE project = {project:String})
+        )
+    GROUP BY session_id
 ),
 blocker_events AS
 (

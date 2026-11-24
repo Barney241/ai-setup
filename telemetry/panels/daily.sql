@@ -6,7 +6,9 @@ SELECT
     r.tasks AS tasks,
     r.cache_hit AS cache_hit,
     t.tool_calls AS tool_calls,
-    t.tool_failures AS tool_failures
+    t.tool_failures AS tool_failures,
+    e.api_errors AS api_errors,
+    e.rate_limits AS rate_limits
 FROM
 (
     SELECT
@@ -17,7 +19,7 @@ FROM
         uniqExact(session_id) AS tasks,
         sum(cached_tokens) / nullIf(sum(input_tokens + cached_tokens + cache_write_tokens), 0) AS cache_hit
     FROM ai.requests
-    WHERE toDate(ts) > today() - {days:UInt32} * 2 AND session_id IN scoped
+    WHERE toDate(ts) > today() - {days:UInt32} * 2 AND (unfiltered AND session_id != '' OR session_id IN scoped)
     GROUP BY day, agent
 ) AS r
 LEFT JOIN
@@ -30,7 +32,23 @@ LEFT JOIN
     FROM ai.tools
     WHERE toDate(ts) > today() - {days:UInt32} * 2
         AND NOT (agent = 'codex' AND tool = 'exec')
-        AND session_id IN scoped
+        AND (unfiltered AND session_id != '' OR session_id IN scoped)
     GROUP BY day, agent
 ) AS t ON r.day = t.day AND r.agent = t.agent
+LEFT JOIN
+(
+    SELECT
+        toString(toDate(ts)) AS day,
+        agent,
+        count() AS api_errors,
+        countIf(
+            positionCaseInsensitive(detail, 'rate limit') > 0
+            OR positionCaseInsensitive(detail, 'rate_limit') > 0
+            OR positionCaseInsensitive(detail, '429') > 0
+        ) AS rate_limits
+    FROM ai.api_errors
+    WHERE toDate(ts) > today() - {days:UInt32} * 2
+        AND (unfiltered AND session_id != '' OR session_id IN scoped)
+    GROUP BY day, agent
+) AS e ON r.day = e.day AND r.agent = e.agent
 ORDER BY day, agent

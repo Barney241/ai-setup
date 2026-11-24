@@ -17,6 +17,6 @@ SELECT
 FROM ai.tasks
 WHERE started >= now() - toIntervalDay({days:UInt32})
     AND total_tokens > 0
-    AND session_id IN scoped
+    AND (unfiltered AND session_id != '' OR session_id IN scoped)
 ORDER BY total_tokens DESC
 LIMIT 100

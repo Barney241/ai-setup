@@ -5,6 +5,6 @@ SELECT
     countIf(decision = 'reject' AND source = 'hook') AS hook_blocked,
     countIf(decision = 'reject' AND source != 'hook') AS rejected
 FROM ai.decisions
-WHERE toDate(ts) > today() - {days:UInt32} AND session_id IN scoped
+WHERE toDate(ts) > today() - {days:UInt32} AND (unfiltered AND session_id != '' OR session_id IN scoped)
 GROUP BY day
 ORDER BY day
