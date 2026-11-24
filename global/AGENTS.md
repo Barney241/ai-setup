@@ -97,7 +97,7 @@ Claude is the main driver. Other providers review, never drive.
 |---|---|---|---|
 | Main driver | `claudeAgent` | latest Claude Opus | as set by the thread |
 | Sol reviewer | `codex` | latest GPT Sol | `reasoningEffort: high` |
-| Council | `claudeAgent`, `codex`, `antigravity` | latest Claude Opus, latest GPT Sol, latest Gemini Pro | high |
+| Council | `claudeAgent`, `codex`, `antigravity` | latest Claude Opus, latest GPT Sol, latest Gemini Neon | high |
 
 Resolve model IDs from `orchestrator_capabilities` every time. Never hardcode
 them. If a seat's provider is unavailable, unauthenticated or out of quota

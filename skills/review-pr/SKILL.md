@@ -24,7 +24,7 @@ a cross-PR check.
 
 Seats come from the model roster in the global rules. Resolve IDs with
 `orchestrator_capabilities`; never hardcode them. Default is the `council`
-skill: Claude Opus, GPT Sol, Gemini Pro, high effort. "Sol" alone means the
+skill: Claude Opus, GPT Sol, Gemini Neon, high effort. "Sol" alone means the
 Sol seat only. One `delegate_task` per seat, `role: "review"`, async, each
 covering all the PRs. A very large PR may get its own delegate per seat.
 

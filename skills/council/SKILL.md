@@ -14,7 +14,7 @@ Bring in three delegates to help with the user's request, usually for review
 or feedback. Use one strong model from each of three different providers, at
 high reasoning effort. If the user's instructions name council members, use
 those: the model roster in the global rules names the default seats (Claude
-Opus on `claudeAgent`, GPT Sol on `codex`, Gemini Pro on `antigravity`).
+Opus on `claudeAgent`, GPT Sol on `codex`, Gemini Neon on `antigravity`).
 Otherwise pick the latest flagship model from each provider. Give every
 delegate the `precision-review` contract for code reviews.
 
@@ -60,7 +60,7 @@ Rounds: 2
 | --- | --- | --- |
 | Claude Opus | 7/10 | 9/10 |
 | GPT Sol | 8/10 | 10/10 |
-| Gemini Pro | 7/10 | 9/10 |
+| Gemini Neon | 7/10 | 9/10 |
 ```
 
 If a delegate gives no score, write `no score`. Do not invent one.

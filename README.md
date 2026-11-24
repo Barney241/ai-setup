@@ -20,7 +20,7 @@ sentence: "modernize #123, sol loop, full stop".
 | `full-send` | "full send" | Takes a change to a merged PR with nobody watching: proves it, reviews it, files it, babysits it, merges it. |
 | `full-stop` | "full stop" | Same as `full-send`, but stops when the PR is ready for you to merge. |
 | `sol-loop` | "sol loop" / "soul loop" | GPT Sol reviews the change in a loop until both agree. 3 rounds, 5 for security or data loss. |
-| `council` | "council" | Claude Opus, GPT Sol and Gemini Pro review; loops until they agree; scores go in the PR. |
+| `council` | "council" | Claude Opus, GPT Sol and Gemini Neon review; loops until they agree; scores go in the PR. |
 | `review-pr` | "review pr", PR links | Council reviews PRs; findings shown first, then posted as one inline comment per finding on the affected lines. |
 | `prove` | "prove it", "verify" | Evidence the change works: reproduce, fail-on-base, the running app, screenshots. |
 | `precision-review` | "precision review" | The review contract every reviewer works to: evidence, severity and effort, scope. |
