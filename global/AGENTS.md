@@ -31,6 +31,17 @@ there. The one standing exception is the papercuts log in `~/Projects/papercuts`
   next to the repo, inside `~/Projects`, or in the repo's own `.claude/worktrees`.
 - Throwaway work (scripts, experiments, clones for inspection, downloads,
   build output, test fixtures) goes in `$TMPDIR` or `/tmp/claude/<job>`.
+- Build caches are shared and stay where the toolchain puts them. Never point
+  `GOCACHE`, `GOMODCACHE` or `CARGO_TARGET_DIR` at a private folder under
+  `/tmp`: each copy grows to tens of GB and nothing removes it. A worktree's
+  build output stays inside the worktree, so removing the worktree removes it.
+- Never wipe a shared cache while other sessions may be building
+  (`go clean -cache`, deleting `~/.cache/go-build`, `cargo clean` in a main
+  checkout). Their builds fail on the missing files. Hosts trim these caches on
+  their own; if a cache looks corrupt, tell the user instead.
+- Test databases and services come from the project's own tooling (its stack
+  tool, testcontainers, its compose file), never from a hand-run `docker run`.
+  Only what the tooling made is cleaned up automatically.
 - Anything meant to outlive the session and not tied to a repo is a question
   for the user, never a new folder in `~/Projects`.
 - Remove worktrees and temp folders you created once their work is merged or
