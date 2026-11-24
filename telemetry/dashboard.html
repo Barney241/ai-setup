@@ -18,6 +18,7 @@
   --poor: var(--critical);
   --claude: #d95926;
   --codex: #3987e5;
+  --antigravity: #10b981;
   --previous: #696e77;
   --time-model: var(--series-3);
   --time-tools: var(--series-5);
@@ -349,8 +350,8 @@ const PAGES = [
   { id: "tasks", label: "Tasks", icon: ["M8 6h13", "M8 12h13", "M8 18h13", "M3 6h.01", "M3 12h.01", "M3 18h.01"], sub: "One row per session" },
   { id: "fleet", label: "Fleet", icon: ["M4 5h16v6H4z", "M4 13h16v6H4z", "M8 8h.01", "M8 16h.01"], sub: "Hosts, agents and T3 runs" },
 ];
-const AGENTS = [["", "All", "var(--previous)"], ["claude", "Claude", "var(--claude)"], ["codex", "Codex", "var(--codex)"]];
-const AGENT_COLORS = { claude: "var(--claude)", codex: "var(--codex)" };
+const AGENTS = [["", "All", "var(--previous)"], ["claude", "Claude", "var(--claude)"], ["codex", "Codex", "var(--codex)"], ["antigravity", "Antigravity", "var(--antigravity)"]];
+const AGENT_COLORS = { claude: "var(--claude)", codex: "var(--codex)", antigravity: "var(--antigravity)" };
 const METRICS = {
   tokens: { label: "Tokens", field: "tokens", format: formatCount },
   api_usd: { label: "Spend", field: "api_usd", format: formatUsd },

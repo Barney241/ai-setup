@@ -17,6 +17,7 @@ MANAGED_CLAUDE_SETTINGS="$AI_SETUP_DIR/global/claude-settings.json"
 MANAGED_SETTINGS_MERGE="$AI_SETUP_DIR/global/merge-settings.jq"
 CLAUDE_SETTINGS="$HOME/.claude/settings.json"
 CODEX_CONFIG="$HOME/.codex/config.toml"
+ANTIGRAVITY_HOOKS="$HOME/.gemini/config/hooks.json"
 CODEX_TELEMETRY_BEGIN="# ai-setup telemetry begin"
 CODEX_TELEMETRY_END="# ai-setup telemetry end"
 CLAUDE_TELEMETRY_KEYS=(
@@ -379,6 +380,49 @@ configure_codex_telemetry() {
   say "updated Codex telemetry settings"
 }
 
+antigravity_telemetry_hook() {
+  local script="$AI_SETUP_DIR/plugin/hooks/antigravity-telemetry.py"
+  jq -n --arg cmd "python3 $script" '{
+    SessionStart: [{ type: "command", command: $cmd, timeout: 5 }],
+    PostToolUse: [{ matcher: "*", hooks: [{ type: "command", command: $cmd, timeout: 5 }] }],
+    PostInvocation: [{ type: "command", command: $cmd, timeout: 5 }],
+    Stop: [{ type: "command", command: $cmd, timeout: 5 }]
+  }'
+}
+
+configure_antigravity_telemetry() {
+  local updated
+  if [ -L "$ANTIGRAVITY_HOOKS" ]; then
+    [ -z "$AI_SETUP_TELEMETRY_ENDPOINT" ] || warn "skipping $ANTIGRAVITY_HOOKS: it is a symlink"
+    return 0
+  fi
+  if [ ! -f "$ANTIGRAVITY_HOOKS" ]; then
+    [ -n "$AI_SETUP_TELEMETRY_ENDPOINT" ] || return 0
+    mkdir -p "$(dirname "$ANTIGRAVITY_HOOKS")"
+    printf '{}\n' > "$ANTIGRAVITY_HOOKS"
+  fi
+  updated="$(mktemp "$ANTIGRAVITY_HOOKS.XXXXXX")"
+  if [ -n "$AI_SETUP_TELEMETRY_ENDPOINT" ]; then
+    if ! jq --argjson hook "$(antigravity_telemetry_hook)" '.["ai-setup-telemetry"] = $hook' "$ANTIGRAVITY_HOOKS" > "$updated"; then
+      unlink "$updated"
+      warn "could not parse $ANTIGRAVITY_HOOKS; telemetry not configured for Antigravity"
+      return 0
+    fi
+  else
+    if ! jq 'del(.["ai-setup-telemetry"])' "$ANTIGRAVITY_HOOKS" > "$updated"; then
+      unlink "$updated"
+      return 0
+    fi
+  fi
+  if jq -e --slurpfile current "$ANTIGRAVITY_HOOKS" '. == $current[0]' "$updated" >/dev/null; then
+    unlink "$updated"
+    return 0
+  fi
+  chmod --reference="$ANTIGRAVITY_HOOKS" "$updated"
+  mv "$updated" "$ANTIGRAVITY_HOOKS"
+  say "updated Antigravity telemetry hooks"
+}
+
 telemetry_request() {
   local sql="$1" params="${2:-}"
   [ -n "$AI_SETUP_TELEMETRY_QUERY_URL" ] || die "telemetry is not configured on this host"
@@ -442,6 +486,7 @@ cmd_sync() {
   register_claude_hub_mcp
   configure_claude_telemetry
   configure_codex_telemetry
+  configure_antigravity_telemetry
   record_sync
 }
 
@@ -596,6 +641,7 @@ cmd_doctor() {
   printf 'telemetry\n'
   check "claude export configured" grep -qF "$AI_SETUP_TELEMETRY_ENDPOINT" "$CLAUDE_SETTINGS"
   check "codex export configured" grep -qxF "$CODEX_TELEMETRY_BEGIN" "$CODEX_CONFIG"
+  check "antigravity export configured" jq -e 'has("ai-setup-telemetry")' "$ANTIGRAVITY_HOOKS"
   check "ingest reachable" curl --silent --output /dev/null --max-time 5 "$AI_SETUP_TELEMETRY_ENDPOINT/v1/logs"
   check "store reachable" telemetry_request 'SELECT 1'
   check "reports return valid UTF-8" reports_are_utf8

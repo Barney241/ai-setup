@@ -4,13 +4,13 @@ CREATE OR REPLACE VIEW ai.events AS
 SELECT
     Timestamp AS ts,
     ResourceAttributes['host.name'] AS host,
-    if(ServiceName LIKE 'codex%', 'codex', 'claude') AS agent,
+    multiIf(ServiceName LIKE 'codex%', 'codex', ServiceName = 'antigravity', 'antigravity', 'claude') AS agent,
     if(ServiceName LIKE 'codex%', LogAttributes['conversation.id'], LogAttributes['session.id']) AS session_id,
     LogAttributes['user.email'] AS account,
     if(Body != '', Body, LogAttributes['event.name']) AS event,
     LogAttributes AS attrs
 FROM otel.otel_logs
-WHERE ServiceName = 'claude-code' OR ServiceName LIKE 'codex%';
+WHERE ServiceName = 'claude-code' OR ServiceName LIKE 'codex%' OR ServiceName = 'antigravity';
 
 CREATE OR REPLACE VIEW ai.requests AS
 SELECT
@@ -39,7 +39,21 @@ SELECT
     toUInt64OrZero(attrs['ttft_ms']) AS ttft_ms,
     toUInt64(0) AS duration_ms
 FROM ai.events
-WHERE event = 'codex.sse_event' AND attrs['event.kind'] = 'response.completed';
+WHERE event = 'codex.sse_event' AND attrs['event.kind'] = 'response.completed'
+UNION ALL
+SELECT
+    ts, host, agent, session_id, account,
+    attrs['model'] AS model,
+    attrs['query_source'] AS source,
+    toUInt64OrZero(attrs['input_tokens']) AS input_tokens,
+    toUInt64OrZero(attrs['cache_read_tokens']) AS cached_tokens,
+    toUInt64OrZero(attrs['cache_creation_tokens']) AS cache_write_tokens,
+    toUInt64OrZero(attrs['output_tokens']) AS output_tokens,
+    CAST(NULL, 'Nullable(Float64)') AS cost_usd,
+    toUInt64OrZero(attrs['ttft_ms']) AS ttft_ms,
+    toUInt64OrZero(attrs['duration_ms']) AS duration_ms
+FROM ai.events
+WHERE event = 'antigravity.api_request';
 
 CREATE OR REPLACE VIEW ai.prompts AS
 SELECT
@@ -47,7 +61,7 @@ SELECT
     attrs['prompt'] AS prompt,
     toUInt64OrZero(attrs['prompt_length']) AS prompt_length
 FROM ai.events
-WHERE event IN ('claude_code.user_prompt', 'codex.user_prompt');
+WHERE event IN ('claude_code.user_prompt', 'codex.user_prompt', 'antigravity.user_prompt');
 
 CREATE OR REPLACE VIEW ai.responses AS
 SELECT
@@ -55,7 +69,7 @@ SELECT
     attrs['model'] AS model,
     attrs['response'] AS response
 FROM ai.events
-WHERE event = 'claude_code.assistant_response';
+WHERE event IN ('claude_code.assistant_response', 'antigravity.assistant_response');
 
 CREATE OR REPLACE VIEW ai.tools AS
 SELECT
@@ -69,7 +83,7 @@ SELECT
     attrs['error_type'] AS error_type,
     attrs['error'] AS error
 FROM ai.events
-WHERE event IN ('claude_code.tool_result', 'codex.tool_result');
+WHERE event IN ('claude_code.tool_result', 'codex.tool_result', 'antigravity.tool_result');
 
 CREATE OR REPLACE VIEW ai.decisions AS
 SELECT
@@ -106,7 +120,7 @@ SELECT
     attrs['model'] AS model,
     toJSONString(mapFilter((key, value) -> key NOT IN ('user.email', 'user.id', 'user.account_id', 'user.account_uuid', 'organization.id'), attrs)) AS detail
 FROM ai.events
-WHERE event = 'claude_code.api_error';
+WHERE event IN ('claude_code.api_error', 'antigravity.api_error');
 
 CREATE OR REPLACE VIEW ai.sessions AS
 SELECT
@@ -116,9 +130,9 @@ SELECT
     any(account) AS account,
     min(ts) AS started,
     max(ts) AS ended,
-    countIf(event IN ('claude_code.user_prompt', 'codex.user_prompt')) AS prompts,
-    countIf(event IN ('claude_code.tool_result', 'codex.tool_result')) AS tool_calls,
-    countIf(event IN ('claude_code.tool_result', 'codex.tool_result') AND attrs['success'] != 'true') AS tool_failures
+    countIf(event IN ('claude_code.user_prompt', 'codex.user_prompt', 'antigravity.user_prompt')) AS prompts,
+    countIf(event IN ('claude_code.tool_result', 'codex.tool_result', 'antigravity.tool_result')) AS tool_calls,
+    countIf(event IN ('claude_code.tool_result', 'codex.tool_result', 'antigravity.tool_result') AND attrs['success'] != 'true') AS tool_failures
 FROM ai.events
 WHERE session_id != ''
 GROUP BY session_id;
@@ -253,4 +267,4 @@ LEFT JOIN
     GROUP BY tool_use_id
 ) AS f ON t.tool_use_id = f.tool_use_id
 LEFT JOIN ai.session_context AS c ON t.session_id = c.session_id
-WHERE t.agent = 'claude' AND NOT t.success;
+WHERE t.agent IN ('claude', 'antigravity') AND NOT t.success;

@@ -30,8 +30,12 @@ blocker_events AS
         SELECT
             ts, session_id, tool, success, duration_ms,
             if(
-                tool IN ('Bash', 'exec_command'),
-                if(JSONExtractString(input, 'command') != '', JSONExtractString(input, 'command'), JSONExtractString(input, 'cmd')),
+                tool IN ('Bash', 'exec_command', 'run_command'),
+                if(
+                    JSONExtractString(input, 'command') != '',
+                    JSONExtractString(input, 'command'),
+                    if(JSONExtractString(input, 'cmd') != '', JSONExtractString(input, 'cmd'), JSONExtractString(input, 'CommandLine'))
+                ),
                 ''
             ) AS shell
         FROM ai.tools
