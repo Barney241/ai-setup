@@ -5,6 +5,11 @@ description: Trigger this if the user says 'council'.
 
 # Council
 
+Before an audit, address outstanding PR comments, fix known issues, and run
+relevant checks. Give council the updated implementation; do not defer known
+fixes until reviews return. If the user wants to discard the implementation
+and explore new ideas, skip fixes to code being replaced.
+
 Bring in three delegates to help with the user's request, usually for review
 or feedback. Use one strong model from each of three different providers, at
 high reasoning effort. If the user's instructions name council members, use
@@ -32,6 +37,12 @@ anything in its own scratch worktree.
 Give each delegate the request and relevant context. For review or feedback,
 keep their work read-only. Collect their responses and summarize the useful
 findings, disagreements, and recommended next steps.
+
+Do not wait idle. When a result arrives, check its findings against the code
+at once and decide what to fix while the other delegates run. Do not edit
+files while a delegate still reviews the same checkout. If the user's
+instructions mark a delegate as non-blocking, do not wait for it; treat a
+late result as feedback and do not record its score.
 
 For a code review, ask each delegate for a score out of 10.
 Count each full review pass as one round.

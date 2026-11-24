@@ -1,7 +1,7 @@
 # Third-party notice
 
 These skills started from [t3dotgg/tstack](https://github.com/t3dotgg/tstack)
-at commit `7de017b3fc9d50c03cf3ecb98fb71e0ca65a78bd` (2026-10-24), MIT
+at commit `11e37a74d0a6868c121cd0910ab2b3bd9873b92a` (2026-11-11), MIT
 License, Copyright (c) 2026 Theo Browne. Its license text is in
 [`LICENSES-tstack`](LICENSES-tstack).
 
@@ -13,5 +13,5 @@ To see what upstream changed since the import:
 
 ```bash
 git clone https://github.com/t3dotgg/tstack /tmp/tstack
-git -C /tmp/tstack diff 7de017b3fc9d50c03cf3ecb98fb71e0ca65a78bd HEAD -- skills
+git -C /tmp/tstack diff 11e37a74d0a6868c121cd0910ab2b3bd9873b92a HEAD -- skills
 ```
