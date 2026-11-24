@@ -104,12 +104,6 @@ them. If a seat's provider is unavailable, unauthenticated or out of quota
 (a usage-limit error), report the seat as missing. Never substitute another
 model, and never retry a seat that failed on quota in the same round.
 
-The `antigravity` provider has no `auto` runtime mode. Delegate to it with
-`runtimeMode: "full-access"`, or its reviewer stops for approval on every
-operation. T3 refuses a child mode broader than its parent thread, so check
-the parent's mode first: under an `auto` parent, do not launch the seat at
-all. Report it as blocked and ask the user to raise the thread to full access.
-
 ## Asking the user
 
 When you are working unattended (full send, full stop, babysitting), a
